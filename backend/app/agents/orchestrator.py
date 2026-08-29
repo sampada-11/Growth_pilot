@@ -1,6 +1,6 @@
 """
 Orchestrator & Guardrail Agent (§13 & §14 Multi-Agent Architecture)
-State Graph Coordinator and Execution Pipeline Manager with Razorpay & Redis integration.
+State Graph Coordinator and Execution Pipeline Manager with Multi-Tenant Scoping.
 """
 import uuid
 import sqlite3
@@ -15,29 +15,29 @@ from backend.app.mock_api.marketing_api import execute_campaign_mock_api
 from backend.app.tools.razorpay import create_razorpay_order, create_razorpay_payment_link
 from backend.app.integrations.redis_client import invalidate_cache
 
-def run_full_pipeline() -> Dict[str, Any]:
+def run_full_pipeline(tenant_id: str = "tenant_store_alpha") -> Dict[str, Any]:
     """
-    Executes end-to-end multi-agent pipeline:
-    1. Insight Agent detects growth patterns
-    2. Growth Decision Agent scores & ranks opportunities
-    3. Campaign Agent drafts top-ranked campaign proposal
-    Returns current pipeline state.
+    Executes end-to-end multi-agent pipeline scoped to tenant_id:
+    1. Insight Agent detects growth patterns for tenant
+    2. Growth Decision Agent scores & ranks opportunities for tenant
+    3. Campaign Agent drafts top-ranked campaign proposal for tenant
     """
-    print("=== Starting GrowthPilot Multi-Agent Pipeline Run ===")
+    print(f"=== Starting GrowthPilot Multi-Agent Pipeline Run for {tenant_id} ===")
     
     # Step 1: Insight Agent
-    insights = run_insight_agent()
+    insights = run_insight_agent(tenant_id=tenant_id)
 
     # Step 2: Growth Decision Agent
-    opportunities = run_decision_agent(insights)
+    opportunities = run_decision_agent(insights, tenant_id=tenant_id)
 
     # Step 3: Campaign Agent for top opportunity
     top_opp = opportunities[0] if opportunities else None
     campaign_proposal = None
     if top_opp:
-        campaign_proposal = run_campaign_agent(top_opp)
+        campaign_proposal = run_campaign_agent(top_opp, tenant_id=tenant_id)
 
     pipeline_state = {
+        "tenant_id": tenant_id,
         "status": "completed_initial_analysis",
         "insights_count": len(insights),
         "opportunities_count": len(opportunities),
@@ -46,66 +46,55 @@ def run_full_pipeline() -> Dict[str, Any]:
         "timestamp": datetime.now().isoformat()
     }
 
-    log_audit("Orchestrator Agent", "PIPELINE_RUN_COMPLETED", pipeline_state)
-    invalidate_cache("*")
+    log_audit("Orchestrator Agent", "PIPELINE_RUN_COMPLETED", pipeline_state, tenant_id=tenant_id)
+    invalidate_cache(f"*{tenant_id}*")
     return pipeline_state
 
 
 def approve_and_execute_campaign(
     campaign_id: str,
     approved_by: str = "Growth Manager",
-    justification: Optional[str] = None
+    justification: Optional[str] = None,
+    tenant_id: str = "tenant_store_alpha"
 ) -> Dict[str, Any]:
     """
-    Handles human approval and triggers real Razorpay campaign execution.
-    1. Validates risk tier and justification
-    2. Mints execution token
-    3. Generates Razorpay Test Order and Payment Link with retry backoff
-    4. Records execution status ('executed' or 'failed') and Razorpay IDs
-    5. Evaluates Experiment Agent post-campaign metrics
-    6. Invalidates Redis cache
+    Handles human approval and triggers real Razorpay campaign execution scoped strictly to tenant_id.
     """
-    print(f"[Orchestrator] Processing approval for campaign {campaign_id} by {approved_by}...")
+    print(f"[Orchestrator] Processing approval for campaign {campaign_id} by {approved_by} (Tenant: {tenant_id})...")
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Fetch campaign details
-    cursor.execute("SELECT * FROM campaign_proposals WHERE campaign_id = ?", (campaign_id,))
+    cursor.execute("SELECT * FROM campaign_proposals WHERE campaign_id = ? AND tenant_id = ?", (campaign_id, tenant_id))
     row = cursor.fetchone()
     if not row:
         conn.close()
-        raise ValueError(f"Campaign proposal {campaign_id} not found.")
+        raise ValueError(f"Campaign proposal '{campaign_id}' not found for tenant '{tenant_id}'. Access denied.")
 
     campaign = dict(row)
 
-    # Validate justification for High Risk tier
     if campaign["risk_tier"] == "High" and not justification:
         conn.close()
         raise ValueError("High risk actions require an explicit human justification before execution.")
 
-    # Mint execution token
     token = f"TOKEN-EXEC-{uuid.uuid4().hex[:12].upper()}"
 
-    # Calculate discounted amount for Razorpay
-    base_price = 1200.0
+    base_price = 1200.0 if tenant_id == "tenant_store_alpha" else 1299.0
     offer_pct = float(campaign.get("offer_pct", 8.0))
     discounted_amount = base_price * (1.0 - (offer_pct / 100.0))
 
-    execution_id = f"EXEC-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    execution_id = f"EXEC-{tenant_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
     try:
-        # 1. Create Razorpay Test Order
         rzp_order = create_razorpay_order(
             amount_inr=discounted_amount,
             receipt_id=f"rec_{execution_id[:12]}",
-            notes={"campaign_id": campaign_id, "approved_by": approved_by}
+            notes={"campaign_id": campaign_id, "approved_by": approved_by, "tenant_id": tenant_id}
         )
 
-        # 2. Create Razorpay Payment Link
         rzp_link = create_razorpay_payment_link(
             amount_inr=discounted_amount,
-            customer_id="CUST-1825-VIP",
+            customer_id=f"CUST-{tenant_id[:4].upper()}-VIP",
             description=f"GrowthPilot {offer_pct:.0f}% Off Campaign Offer",
             campaign_id=campaign_id
         )
@@ -115,7 +104,6 @@ def approve_and_execute_campaign(
         exec_status = "executed"
         error_msg = None
 
-        # Call Mock Marketing API for delivery dispatch confirmation
         api_receipt = execute_campaign_mock_api(campaign, token)
         api_receipt["razorpay_order_id"] = rzp_order_id
         api_receipt["razorpay_payment_link"] = rzp_link.get("short_url")
@@ -127,16 +115,14 @@ def approve_and_execute_campaign(
         rzp_link_id = None
         api_receipt = {"status": "FAILED", "error": error_msg}
 
-    # Update proposal status
-    cursor.execute("UPDATE campaign_proposals SET status = ? WHERE campaign_id = ?", (exec_status, campaign_id))
+    cursor.execute("UPDATE campaign_proposals SET status = ? WHERE campaign_id = ? AND tenant_id = ?", (exec_status, campaign_id, tenant_id))
 
-    # Log Execution in DB
     cursor.execute("""
         INSERT INTO executions 
-        (execution_id, campaign_id, approved_by, justification, executed_at, mock_api_status, execution_token, razorpay_order_id, razorpay_payment_link_id, status, error_message)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (execution_id, tenant_id, campaign_id, approved_by, justification, executed_at, mock_api_status, execution_token, razorpay_order_id, razorpay_payment_link_id, status, error_message)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
-        execution_id, campaign_id, approved_by, justification or "Approved via Campaign Studio",
+        execution_id, tenant_id, campaign_id, approved_by, justification or "Approved via Campaign Studio",
         datetime.now().isoformat(), api_receipt.get("status", "SENT"), token,
         rzp_order_id, rzp_link_id, exec_status, error_msg
     ))
@@ -149,16 +135,14 @@ def approve_and_execute_campaign(
         "razorpay_order_id": rzp_order_id,
         "razorpay_payment_link_id": rzp_link_id,
         "status": exec_status
-    })
+    }, tenant_id=tenant_id)
 
-    # Trigger Experiment Agent (§35 Simulated 2-Week Post Period Evaluation)
     exp_result = evaluate_experiment(execution_id) if exec_status == "executed" else None
-
-    # Invalidate Redis Cache
-    invalidate_cache("*")
+    invalidate_cache(f"*{tenant_id}*")
 
     return {
         "execution_id": execution_id,
+        "tenant_id": tenant_id,
         "campaign_id": campaign_id,
         "status": exec_status,
         "token": token,

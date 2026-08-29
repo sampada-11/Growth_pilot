@@ -1,32 +1,32 @@
 """
-Redis-Backed Rate Limiter (§3 Rate Limiting)
-Implements fixed/sliding window rate limiting per IP and per route.
+Redis-Backed Per-Tenant Rate Limiter (§3 Per-Tenant Rate Limiting)
+Implements fixed/sliding window rate limiting scoped strictly by tenant_id.
+Ensures one tenant's request volume cannot exhaust resources for another tenant.
 """
 import time
 from typing import Tuple
 from fastapi import Request, HTTPException
 from backend.app.integrations.redis_client import get_redis_client
 
-RATE_LIMIT_PREFIX = "growthpilot:ratelimit:"
+RATE_LIMIT_PREFIX = "growthpilot:ratelimit:tenant:"
 
 
-def is_rate_limited(
-    identifier: str,
+def is_tenant_rate_limited(
+    tenant_id: str,
     route_name: str,
-    max_requests: int = 30,
+    max_requests: int = 15,
     window_seconds: int = 60
 ) -> Tuple[bool, int, int]:
     """
-    Checks if a given identifier (IP/client) has exceeded rate limit for a specific route.
+    Checks if a given tenant has exceeded the rate limit for a specific route.
     Returns: (is_limited: bool, remaining_requests: int, reset_seconds: int)
     """
     r = get_redis_client()
-    key = f"{RATE_LIMIT_PREFIX}{route_name}:{identifier}"
+    key = f"{RATE_LIMIT_PREFIX}{route_name}:{tenant_id}"
 
     try:
         current = r.get(key)
         if current is None:
-            # First request in this window
             r.set(key, "1", ex=window_seconds)
             return False, max_requests - 1, window_seconds
 
@@ -34,7 +34,6 @@ def is_rate_limited(
         if count >= max_requests:
             return True, 0, window_seconds
 
-        # Increment count
         new_count = r.incr(key)
         remaining = max(0, max_requests - new_count)
         return False, remaining, window_seconds
@@ -43,23 +42,17 @@ def is_rate_limited(
         return False, max_requests, window_seconds
 
 
-def enforce_rate_limit(
-    request: Request,
+def enforce_tenant_rate_limit(
+    tenant_id: str,
     route_name: str,
-    max_requests: int = 30,
+    max_requests: int = 15,
     window_seconds: int = 60
 ):
     """
-    FastAPI dependency/helper to enforce rate limits and raise 429 if exceeded.
+    Raises HTTP 429 Too Many Requests if the tenant has exceeded their request quota.
     """
-    client_ip = request.client.host if request.client else "127.0.0.1"
-    # Support forwarded header if behind proxy
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        client_ip = forwarded.split(",")[0].strip()
-
-    is_limited, remaining, reset_secs = is_rate_limited(
-        identifier=client_ip,
+    is_limited, remaining, reset_secs = is_tenant_rate_limited(
+        tenant_id=tenant_id,
         route_name=route_name,
         max_requests=max_requests,
         window_seconds=window_seconds
@@ -70,7 +63,8 @@ def enforce_rate_limit(
             status_code=429,
             detail={
                 "error": "Too Many Requests",
-                "message": f"Rate limit of {max_requests} requests per {window_seconds}s exceeded for route '{route_name}'.",
+                "message": f"Tenant '{tenant_id}' exceeded rate limit of {max_requests} requests per {window_seconds}s for '{route_name}'.",
+                "tenant_id": tenant_id,
                 "retry_after_seconds": reset_secs
             }
         )

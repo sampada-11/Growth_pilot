@@ -1,21 +1,20 @@
 """
 RFM Customer Segmentation & CLV Estimation Tool (§21 AI/ML Component)
+Multi-tenant aware.
 """
 import sqlite3
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List, Dict, Any
 from backend.app.db.models import get_db_connection
 
-def compute_customer_segmentation() -> Dict[str, Any]:
+def compute_customer_segmentation(tenant_id: str = "tenant_store_alpha") -> Dict[str, Any]:
     """
-    Computes RFM (Recency, Frequency, Monetary) scores and segment groupings.
-    Also estimates Customer Lifetime Value (CLV = historical avg order value * estimated 12-month purchase freq).
+    Computes RFM (Recency, Frequency, Monetary) scores and segment groupings scoped to tenant_id.
     """
     conn = get_db_connection()
     
-    # Query customer purchase history
     query = """
         SELECT 
             c.customer_id,
@@ -27,26 +26,24 @@ def compute_customer_segmentation() -> Dict[str, Any]:
             COALESCE(AVG(o.revenue), 0) AS avg_order_value,
             MAX(o.purchase_date) AS last_purchase_date
         FROM customers c
-        LEFT JOIN order_items o ON c.customer_id = o.customer_id
+        LEFT JOIN order_items o ON c.customer_id = o.customer_id AND o.tenant_id = c.tenant_id
+        WHERE c.tenant_id = ?
         GROUP BY c.customer_id
     """
-    df = pd.read_sql_query(query, conn)
+    df = pd.read_sql_query(query, conn, params=(tenant_id,))
     conn.close()
 
     if df.empty:
-        return {"segments": [], "summary": {}}
+        return {"segments": [], "total_customers": 0, "avg_clv_overall": 0.0}
 
-    # Calculate recency in days
     now = datetime.now()
     df["last_purchase_date"] = pd.to_datetime(df["last_purchase_date"])
     max_date = df["last_purchase_date"].max() if not df["last_purchase_date"].isna().all() else now
     df["recency_days"] = (max_date - df["last_purchase_date"]).dt.days.fillna(180)
 
-    # Compute CLV estimate: historical avg order value * predicted annual frequency
     df["predicted_annual_freq"] = np.clip(df["frequency"] * 2.0, 1.0, 24.0)
     df["clv_estimate"] = (df["avg_order_value"] * df["predicted_annual_freq"]).round(2)
 
-    # Segment summary breakdown
     segment_counts = df.groupby("raw_segment").agg(
         customer_count=("customer_id", "count"),
         avg_clv=("clv_estimate", "mean"),
