@@ -5,11 +5,10 @@ import unittest
 import os
 import sys
 
-# Add project root to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from backend.app.db.models import init_db, get_db_connection
-from backend.app.db.seed_synthetic_data import seed_database
+from backend.app.db.seed_synthetic_data import seed_database, TENANT_ALPHA
 from backend.app.tools.segmentation import compute_customer_segmentation
 from backend.app.tools.churn import compute_churn_risk_list
 from backend.app.tools.trend import compute_product_trends
@@ -26,20 +25,19 @@ class TestGrowthPilotToolsAndAgents(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        """Seeds the test database before running tests."""
         init_db()
-        seed_database(force=False)
+        seed_database(force=True)
 
     def test_01_segmentation_tool(self):
         """Verifies customer segmentation tool returns valid segments and total count."""
-        result = compute_customer_segmentation()
+        result = compute_customer_segmentation(tenant_id=TENANT_ALPHA)
         self.assertIn("segments", result)
         self.assertGreater(result["total_customers"], 0)
         self.assertGreater(len(result["segments"]), 0)
 
     def test_02_churn_tool(self):
         """Verifies churn risk tool returns customer churn scores between 0 and 1."""
-        high_risk_list = compute_churn_risk_list(limit=10)
+        high_risk_list = compute_churn_risk_list(tenant_id=TENANT_ALPHA, limit=10)
         self.assertIsInstance(high_risk_list, list)
         self.assertGreater(len(high_risk_list), 0)
         for c in high_risk_list:
@@ -48,7 +46,7 @@ class TestGrowthPilotToolsAndAgents(unittest.TestCase):
 
     def test_03_trend_tool(self):
         """Verifies product trend analysis computes growth rates and categories."""
-        result = compute_product_trends()
+        result = compute_product_trends(tenant_id=TENANT_ALPHA)
         self.assertIn("products", result)
         self.assertIn("categories", result)
         self.assertGreater(len(result["products"]), 0)
@@ -79,7 +77,7 @@ class TestGrowthPilotToolsAndAgents(unittest.TestCase):
 
     def test_06_full_agent_pipeline(self):
         """Verifies full multi-agent pipeline run and top opportunity generation."""
-        state = run_full_pipeline()
+        state = run_full_pipeline(tenant_id=TENANT_ALPHA)
         self.assertEqual(state["status"], "completed_initial_analysis")
         self.assertGreater(state["insights_count"], 0)
         self.assertGreater(state["opportunities_count"], 0)
@@ -87,13 +85,13 @@ class TestGrowthPilotToolsAndAgents(unittest.TestCase):
 
     def test_07_approval_and_mock_execution(self):
         """Verifies human approval and mock marketing API execution receipt generation."""
-        state = run_full_pipeline()
+        state = run_full_pipeline(tenant_id=TENANT_ALPHA)
         proposal = state["active_campaign_proposal"]
         self.assertIsNotNone(proposal)
         campaign_id = proposal["campaign_id"]
         
         # Approve campaign
-        exec_res = approve_and_execute_campaign(campaign_id, approved_by="Test Growth Manager", justification="Testing approval pipeline")
+        exec_res = approve_and_execute_campaign(campaign_id, approved_by="Test Growth Manager", justification="Testing approval pipeline", tenant_id=TENANT_ALPHA)
         self.assertIn("execution_id", exec_res)
         self.assertEqual(exec_res["mock_api_receipt"]["status"], "SENT")
         self.assertEqual(exec_res["experiment_result"]["verdict"], "Campaign Succeeded")

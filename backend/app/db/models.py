@@ -10,13 +10,15 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "growthpilot.db")
-DEFAULT_TENANT_ID = os.environ.get("DEMO_TENANT_ID", "tenant_demo_001")
+DEFAULT_TENANT_ID = os.environ.get("DEMO_TENANT_ID", "tenant_store_alpha")
 
 
 def get_db_connection():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=60.0)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA busy_timeout=60000;")
     return conn
 
 
@@ -28,7 +30,7 @@ def init_db():
     cursor.executescript("""
     CREATE TABLE IF NOT EXISTS customers (
         customer_id TEXT PRIMARY KEY,
-        tenant_id TEXT DEFAULT 'tenant_demo_001',
+        tenant_id TEXT DEFAULT 'tenant_store_alpha',
         age INTEGER,
         segment TEXT,
         channel TEXT,
@@ -37,7 +39,7 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS products (
         product_id TEXT PRIMARY KEY,
-        tenant_id TEXT DEFAULT 'tenant_demo_001',
+        tenant_id TEXT DEFAULT 'tenant_store_alpha',
         name TEXT,
         category TEXT,
         base_price REAL,
@@ -49,7 +51,7 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS order_items (
         order_item_id TEXT PRIMARY KEY,
-        tenant_id TEXT DEFAULT 'tenant_demo_001',
+        tenant_id TEXT DEFAULT 'tenant_store_alpha',
         customer_id TEXT,
         product_id TEXT,
         purchase_date TEXT,
@@ -62,7 +64,7 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS sessions (
         session_id TEXT PRIMARY KEY,
-        tenant_id TEXT DEFAULT 'tenant_demo_001',
+        tenant_id TEXT DEFAULT 'tenant_store_alpha',
         customer_id TEXT,
         start_time TEXT,
         channel TEXT,
@@ -71,7 +73,7 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS cart_events (
         cart_event_id TEXT PRIMARY KEY,
-        tenant_id TEXT DEFAULT 'tenant_demo_001',
+        tenant_id TEXT DEFAULT 'tenant_store_alpha',
         session_id TEXT,
         customer_id TEXT,
         product_id TEXT,
@@ -83,16 +85,16 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS insights (
         insight_id TEXT PRIMARY KEY,
-        tenant_id TEXT DEFAULT 'tenant_demo_001',
+        tenant_id TEXT DEFAULT 'tenant_store_alpha',
         type TEXT,
         description TEXT,
-        evidence TEXT, -- JSON string
+        evidence TEXT,
         generated_at TEXT
     );
 
     CREATE TABLE IF NOT EXISTS opportunities (
         opportunity_id TEXT PRIMARY KEY,
-        tenant_id TEXT DEFAULT 'tenant_demo_001',
+        tenant_id TEXT DEFAULT 'tenant_store_alpha',
         insight_id TEXT,
         problem TEXT,
         expected_impact REAL,
@@ -107,17 +109,17 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS campaign_proposals (
         campaign_id TEXT PRIMARY KEY,
-        tenant_id TEXT DEFAULT 'tenant_demo_001',
+        tenant_id TEXT DEFAULT 'tenant_store_alpha',
         opportunity_id TEXT,
         target_segment TEXT,
         product_id TEXT,
         offer_pct REAL,
-        discount_band TEXT, -- JSON string (min_pct, max_pct, recommended_pct)
+        discount_band TEXT,
         channel TEXT,
         generated_copy TEXT,
         expected_roi REAL,
         risk_tier TEXT,
-        risk_reasons TEXT, -- JSON string
+        risk_reasons TEXT,
         status TEXT DEFAULT 'drafted',
         created_at TEXT,
         FOREIGN KEY (opportunity_id) REFERENCES opportunities(opportunity_id)
@@ -125,7 +127,7 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS campaign_interactions (
         interaction_id TEXT PRIMARY KEY,
-        tenant_id TEXT DEFAULT 'tenant_demo_001',
+        tenant_id TEXT DEFAULT 'tenant_store_alpha',
         campaign_id TEXT,
         customer_id TEXT,
         interaction_type TEXT,
@@ -136,7 +138,7 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS executions (
         execution_id TEXT PRIMARY KEY,
-        tenant_id TEXT DEFAULT 'tenant_demo_001',
+        tenant_id TEXT DEFAULT 'tenant_store_alpha',
         campaign_id TEXT,
         approved_by TEXT,
         justification TEXT,
@@ -146,14 +148,14 @@ def init_db():
         razorpay_order_id TEXT,
         razorpay_payment_link_id TEXT,
         razorpay_payment_id TEXT,
-        status TEXT DEFAULT 'executed', -- 'executed' or 'failed'
+        status TEXT DEFAULT 'executed',
         error_message TEXT,
         FOREIGN KEY (campaign_id) REFERENCES campaign_proposals(campaign_id)
     );
 
     CREATE TABLE IF NOT EXISTS experiment_results (
         result_id TEXT PRIMARY KEY,
-        tenant_id TEXT DEFAULT 'tenant_demo_001',
+        tenant_id TEXT DEFAULT 'tenant_store_alpha',
         execution_id TEXT,
         expected_conversion REAL,
         actual_conversion REAL,
@@ -167,21 +169,20 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS audit_logs (
         log_id TEXT PRIMARY KEY,
-        tenant_id TEXT DEFAULT 'tenant_demo_001',
+        tenant_id TEXT DEFAULT 'tenant_store_alpha',
         timestamp TEXT,
         agent_or_user TEXT,
         action_type TEXT,
         payload_hash TEXT,
-        details TEXT -- JSON string (sanitized, non-sensitive)
+        details TEXT
     );
     """)
 
-    # Dynamic column migrations for existing SQLite database files
     def add_column_if_not_exists(table, column, col_type):
         try:
             cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
         except sqlite3.OperationalError:
-            pass # Column already exists
+            pass
 
     tables = [
         "customers", "products", "order_items", "sessions", "cart_events",
@@ -189,7 +190,7 @@ def init_db():
         "executions", "experiment_results", "audit_logs"
     ]
     for tbl in tables:
-        add_column_if_not_exists(tbl, "tenant_id", "TEXT DEFAULT 'tenant_demo_001'")
+        add_column_if_not_exists(tbl, "tenant_id", "TEXT DEFAULT 'tenant_store_alpha'")
 
     add_column_if_not_exists("products", "margin_pct", "REAL DEFAULT 40.0")
     add_column_if_not_exists("products", "inventory_count", "INTEGER DEFAULT 100")
@@ -207,7 +208,7 @@ def init_db():
 
 
 def sanitize_details(details: Dict[str, Any]) -> Dict[str, Any]:
-    """Removes sensitive payment data (card numbers, CVVs, full auth tokens) before logging."""
+    """Removes sensitive payment data before logging."""
     sensitive_keys = {"card", "cvv", "card_number", "secret", "password", "key_secret"}
     sanitized = {}
     for k, v in details.items():

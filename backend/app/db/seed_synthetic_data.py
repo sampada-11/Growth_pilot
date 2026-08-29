@@ -46,9 +46,7 @@ def seed_database(force: bool = False):
     print("Generating multi-tenant datasets for Tenant A (SoundWave) and Tenant B (PulseWear)...")
     random.seed(42)
 
-    # -------------------------------------------------------------
     # 1. Seed Tenant A: SoundWave Audio (Audio Specialists)
-    # -------------------------------------------------------------
     products_alpha = [
         {"product_id": "PROD-001", "tenant_id": TENANT_ALPHA, "name": "Wireless Earbuds Pro", "category": "Audio", "base_price": 2999.0, "margin_pct": 45.0, "inventory_count": 150, "inventory_urgency_factor": 1.0},
         {"product_id": "PROD-002", "tenant_id": TENANT_ALPHA, "name": "Earbud Case & Charging Stand", "category": "Audio", "base_price": 1200.0, "margin_pct": 50.0, "inventory_count": 450, "inventory_urgency_factor": 1.3},
@@ -63,9 +61,7 @@ def seed_database(force: bool = False):
         VALUES (:product_id, :tenant_id, :name, :category, :base_price, :margin_pct, :inventory_count, :inventory_urgency_factor, '2025-01-01')
     """, products_alpha)
 
-    # -------------------------------------------------------------
     # 2. Seed Tenant B: PulseWear Smart Gear (Wearables & Fitness)
-    # -------------------------------------------------------------
     products_beta = [
         {"product_id": "PROD-B01", "tenant_id": TENANT_BETA, "name": "Pulse GPS Smartwatch Pro", "category": "Wearables", "base_price": 4499.0, "margin_pct": 35.0, "inventory_count": 120, "inventory_urgency_factor": 1.1},
         {"product_id": "PROD-B02", "tenant_id": TENANT_BETA, "name": "Active Fitness Band HR", "category": "Wearables", "base_price": 1799.0, "margin_pct": 30.0, "inventory_count": 90, "inventory_urgency_factor": 0.9},
@@ -94,7 +90,7 @@ def seed_database(force: bool = False):
         if 18 <= age <= 25 and len(earbud_buyers_18_25) < 850:
             earbud_buyers_18_25.append(c_id)
 
-    cursor.executemany("INSERT INTO customers VALUES (?, ?, ?, ?, ?, ?)", customers_alpha)
+    cursor.executemany("INSERT OR REPLACE INTO customers VALUES (?, ?, ?, ?, ?, ?)", customers_alpha)
 
     # 4. Generate Customers for Tenant B (PulseWear)
     customers_beta = []
@@ -106,7 +102,7 @@ def seed_database(force: bool = False):
         signup_dt = start_date + timedelta(days=random.randint(0, 90))
         customers_beta.append((c_id, TENANT_BETA, age, segment, channel, signup_dt.strftime("%Y-%m-%d")))
 
-    cursor.executemany("INSERT INTO customers VALUES (?, ?, ?, ?, ?, ?)", customers_beta)
+    cursor.executemany("INSERT OR REPLACE INTO customers VALUES (?, ?, ?, ?, ?, ?)", customers_beta)
 
     # 5. Orders, Sessions, Carts for Tenant A
     order_items = []
@@ -145,9 +141,9 @@ def seed_database(force: bool = False):
         s_id = f"SESS-B{session_count:05d}"
         sessions.append((s_id, TENANT_BETA, c_id, p_date.strftime("%Y-%m-%d %H:%M:%S"), "Strava Partner"))
 
-    cursor.executemany("INSERT INTO order_items VALUES (?, ?, ?, ?, ?, ?, ?, ?)", order_items)
-    cursor.executemany("INSERT INTO sessions VALUES (?, ?, ?, ?, ?)", sessions)
-    cursor.executemany("INSERT INTO cart_events VALUES (?, ?, ?, ?, ?, ?, ?)", cart_events)
+    cursor.executemany("INSERT OR REPLACE INTO order_items VALUES (?, ?, ?, ?, ?, ?, ?, ?)", order_items)
+    cursor.executemany("INSERT OR REPLACE INTO sessions VALUES (?, ?, ?, ?, ?)", sessions)
+    cursor.executemany("INSERT OR REPLACE INTO cart_events VALUES (?, ?, ?, ?, ?, ?, ?)", cart_events)
 
     conn.commit()
     conn.close()

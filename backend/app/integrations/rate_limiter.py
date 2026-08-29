@@ -42,6 +42,21 @@ def is_tenant_rate_limited(
         return False, max_requests, window_seconds
 
 
+# Backward-compatible alias
+def is_rate_limited(
+    identifier: str,
+    route_name: str,
+    max_requests: int = 15,
+    window_seconds: int = 60
+) -> Tuple[bool, int, int]:
+    return is_tenant_rate_limited(
+        tenant_id=identifier,
+        route_name=route_name,
+        max_requests=max_requests,
+        window_seconds=window_seconds
+    )
+
+
 def enforce_tenant_rate_limit(
     tenant_id: str,
     route_name: str,

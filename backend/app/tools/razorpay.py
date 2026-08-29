@@ -1,29 +1,42 @@
 """
-Razorpay Test-Mode Integration Tool (Orders + Payments APIs + Webhooks + Retries)
-Supports live Razorpay Test Mode with exponential backoff retries, SHA-256 webhook hashing,
-and end-to-end payment.failed handling.
+Razorpay Test-Mode & Webhook Integration (§3 Phase 1 & Phase 2 Integration)
+Provides test order creation, payment link generation, HMAC-SHA256 signature validation,
+SHA-256 payload hashing, exponential backoff retries, and confidence degradation on payment failure.
 """
 import os
 import json
 import time
 import hmac
 import hashlib
+from typing import Dict, Any, Optional
 from datetime import datetime
-from typing import Dict, Any, Optional, Tuple
-import requests
-
 from backend.app.db.models import get_db_connection, log_audit
 
-# Environment variables
-RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "rzp_test_growthpilot123")
-RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "rzp_test_secret123")
-RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "rzp_webhook_secret123")
-RAZORPAY_BASE_URL = "https://api.razorpay.com/v1"
+RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "rzp_test_growthpilot_demo_key")
+RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "mock_secret_key_growthpilot_test")
+RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "growthpilot_webhook_secret_key_2026")
 
 
-def compute_payload_hash(raw_bytes: bytes) -> str:
-    """Computes SHA-256 hex digest of raw webhook payload."""
-    return hashlib.sha256(raw_bytes).hexdigest()
+def compute_payload_hash(raw_payload: bytes) -> str:
+    """Computes SHA-256 hash of raw webhook payload for tamper-evident audit trail."""
+    return hashlib.sha256(raw_payload).hexdigest()
+
+
+def verify_razorpay_signature(body_str: str, signature: str, secret: Optional[str] = None) -> bool:
+    """
+    Verifies Razorpay HMAC SHA256 signature for webhooks or payment responses.
+    """
+    webhook_secret = secret or RAZORPAY_WEBHOOK_SECRET
+    if not signature or not webhook_secret:
+        return False
+
+    expected_signature = hmac.new(
+        key=webhook_secret.encode("utf-8"),
+        msg=body_str.encode("utf-8"),
+        digestmod=hashlib.sha256
+    ).hexdigest()
+
+    return hmac.compare_digest(expected_signature, signature)
 
 
 def create_razorpay_order(
@@ -33,42 +46,37 @@ def create_razorpay_order(
     max_retries: int = 2
 ) -> Dict[str, Any]:
     """
-    Creates a Razorpay Order in test mode with exponential backoff retry (max 2 retries).
-    Amount is in paise (INR * 100).
+    Creates a Razorpay Test Mode Order with exponential backoff retries.
     """
     amount_paise = int(round(amount_inr * 100))
     payload = {
         "amount": amount_paise,
         "currency": "INR",
         "receipt": receipt_id,
-        "notes": notes or {"source": "GrowthPilot Agent", "tenant_id": "tenant_demo_001"}
+        "notes": notes or {}
     }
 
-    # Attempt live API call with retry backoff
-    for attempt in range(max_retries + 1):
-        try:
-            response = requests.post(
-                f"{RAZORPAY_BASE_URL}/orders",
-                auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET),
-                json=payload,
-                timeout=5
-            )
-            if response.status_code in (200, 201):
-                data = response.json()
-                data["test_mode"] = True
-                log_audit("Razorpay Client", "CREATED_ORDER", {"order_id": data.get("id"), "amount": amount_inr, "attempt": attempt + 1})
-                return data
-            elif attempt < max_retries:
-                time.sleep(0.5 * (2 ** attempt))
-        except Exception as err:
-            if attempt < max_retries:
-                time.sleep(0.5 * (2 ** attempt))
-            else:
-                print(f"[Razorpay Client] Live API fallback after {max_retries} retries ({err})")
+    # Attempt live Razorpay API if client credentials exist
+    if os.environ.get("RAZORPAY_KEY_ID") and not os.environ.get("RAZORPAY_KEY_ID", "").startswith("rzp_test_growthpilot"):
+        for attempt in range(max_retries + 1):
+            try:
+                import razorpay
+                client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+                order = client.order.create(data=payload)
+                log_audit("Razorpay Client", "CREATED_LIVE_TEST_ORDER", {"order_id": order.get("id"), "amount": amount_inr})
+                return order
+            except Exception as err:
+                if attempt < max_retries:
+                    backoff = (2 ** attempt) * 0.5
+                    time.sleep(backoff)
+                else:
+                    print(f"[Razorpay] Live Order API call failed after retries ({err}). Falling back to deterministic test mode.")
 
-    # Seamless test-mode object generator
-    order_id = f"order_test_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-    fallback = {
+    # High-fidelity deterministic Test Mode response
+    order_id = f"order_{int(time.time())}_{receipt_id[:8]}"
+    created_at = int(time.time())
+    
+    mock_order = {
         "id": order_id,
         "entity": "order",
         "amount": amount_paise,
@@ -79,11 +87,11 @@ def create_razorpay_order(
         "status": "created",
         "attempts": 0,
         "notes": notes or {},
-        "created_at": int(datetime.now().timestamp()),
+        "created_at": created_at,
         "test_mode": True
     }
     log_audit("Razorpay Client", "CREATED_ORDER_FALLBACK", {"order_id": order_id, "amount": amount_inr})
-    return fallback
+    return mock_order
 
 
 def create_razorpay_payment_link(
@@ -94,168 +102,159 @@ def create_razorpay_payment_link(
     max_retries: int = 2
 ) -> Dict[str, Any]:
     """
-    Generates a Razorpay Payment Link in test mode with exponential backoff retry.
+    Creates a Razorpay Test Mode Payment Link for campaign action delivery with exponential backoff.
     """
     amount_paise = int(round(amount_inr * 100))
-    payload = {
+    link_payload = {
         "amount": amount_paise,
         "currency": "INR",
         "accept_partial": False,
         "description": description,
         "customer": {
             "name": f"Customer {customer_id}",
-            "contact": "+919876543210",
-            "email": f"{customer_id.lower()}@example.com"
+            "email": f"{customer_id.lower()}@example.com",
+            "contact": "+919876543210"
         },
         "notify": {"sms": False, "email": True},
         "reminder_enable": True,
         "notes": {
-            "campaign_id": campaign_id or "GENERAL",
             "customer_id": customer_id,
-            "tenant_id": "tenant_demo_001"
+            "campaign_id": campaign_id or "NONE"
         }
     }
 
-    for attempt in range(max_retries + 1):
-        try:
-            response = requests.post(
-                f"{RAZORPAY_BASE_URL}/payment_links",
-                auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET),
-                json=payload,
-                timeout=5
-            )
-            if response.status_code in (200, 201):
-                data = response.json()
-                data["test_mode"] = True
-                log_audit("Razorpay Client", "CREATED_PAYMENT_LINK", {"link_id": data.get("id"), "short_url": data.get("short_url")})
-                return data
-            elif attempt < max_retries:
-                time.sleep(0.5 * (2 ** attempt))
-        except Exception as err:
-            if attempt < max_retries:
-                time.sleep(0.5 * (2 ** attempt))
+    if os.environ.get("RAZORPAY_KEY_ID") and not os.environ.get("RAZORPAY_KEY_ID", "").startswith("rzp_test_growthpilot"):
+        for attempt in range(max_retries + 1):
+            try:
+                import razorpay
+                client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+                link = client.payment_link.create(link_payload)
+                log_audit("Razorpay Client", "CREATED_LIVE_PAYMENT_LINK", {"link_id": link.get("id"), "url": link.get("short_url")})
+                return link
+            except Exception as err:
+                if attempt < max_retries:
+                    backoff = (2 ** attempt) * 0.5
+                    time.sleep(backoff)
+                else:
+                    print(f"[Razorpay] Live Link API call failed after retries ({err}). Falling back to test mode.")
 
-    link_id = f"plink_test_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    link_id = f"plink_test_{int(time.time())}"
     fallback = {
         "id": link_id,
         "entity": "payment_link",
         "amount": amount_paise,
-        "amount_paid": 0,
         "currency": "INR",
-        "short_url": f"https://rzp.io/i/test_{link_id[:10]}",
+        "short_url": f"https://rzp.io/i/{link_id}",
         "status": "created",
         "description": description,
-        "created_at": int(datetime.now().timestamp()),
-        "test_mode": True
+        "customer": link_payload["customer"],
+        "notes": link_payload["notes"],
+        "created_at": int(time.time())
     }
     log_audit("Razorpay Client", "CREATED_PAYMENT_LINK_FALLBACK", {"link_id": link_id, "url": fallback["short_url"]})
     return fallback
 
 
-def verify_razorpay_signature(raw_body: str, signature: str, secret: str = RAZORPAY_WEBHOOK_SECRET) -> bool:
+def process_razorpay_webhook(
+    event_payload: Dict[str, Any],
+    payload_hash: Optional[str] = None
+) -> Dict[str, Any]:
     """
-    Verifies HMAC-SHA256 signature from Razorpay.
+    Processes incoming Razorpay webhook events and updates database state.
+    On payment.failed: Reduces decision confidence and logs operational alert.
     """
-    if not signature:
-        return False
-    expected_sig = hmac.new(
-        secret.encode('utf-8'),
-        raw_body.encode('utf-8'),
-        hashlib.sha256
-    ).hexdigest()
-    return hmac.compare_digest(expected_sig, signature)
-
-
-def process_razorpay_webhook(event_payload: Dict[str, Any], payload_hash: Optional[str] = None) -> Dict[str, Any]:
-    """
-    Processes Razorpay webhook event payload:
-    - payment.captured / order.paid: Records interaction in DB
-    - payment.failed: Inserts cart_event, updates executions failure, reduces decision confidence, logs audit record.
-    """
-    event_name = event_payload.get("event", "unknown")
-    payload_entity = event_payload.get("payload", {}).get("payment", {}).get("entity", {})
-    
-    payment_id = payload_entity.get("id", f"pay_test_{datetime.now().strftime('%H%M%S')}")
-    order_id = payload_entity.get("order_id", "order_test_unknown")
-    amount = payload_entity.get("amount", 0) / 100.0
-    email = payload_entity.get("email", "customer@example.com")
-    error_description = payload_entity.get("error_description", "Payment transaction failed")
-
-    notes = payload_entity.get("notes", {})
-    customer_id = notes.get("customer_id", "CUST-00001")
-    product_id = notes.get("product_id", "PROD-002")
-    campaign_id = notes.get("campaign_id", "CAMP-DEMO-001")
+    event_type = event_payload.get("event", "unknown")
+    payload = event_payload.get("payload", {})
+    payment_entity = payload.get("payment", {}).get("entity", {})
+    order_entity = payload.get("order", {}).get("entity", {})
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    if event_name in ["payment.captured", "order.paid"]:
-        interaction_id = f"INT-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    if event_type == "payment.captured" or event_type == "order.paid":
+        order_id = payment_entity.get("order_id") or order_entity.get("id")
+        amount = (payment_entity.get("amount") or order_entity.get("amount", 0)) / 100.0
+        customer_id = payment_entity.get("notes", {}).get("customer_id", "CUST-00001")
+        tenant_id = payment_entity.get("notes", {}).get("tenant_id", "tenant_store_alpha")
+
         cursor.execute("""
-            INSERT INTO campaign_interactions (interaction_id, campaign_id, customer_id, interaction_type, interaction_time)
-            VALUES (?, ?, ?, ?, ?)
-        """, (interaction_id, campaign_id, customer_id, "payment_success", datetime.now().isoformat()))
-        conn.commit()
+            INSERT OR REPLACE INTO order_items (order_item_id, tenant_id, customer_id, product_id, purchase_date, quantity, discount_pct, revenue)
+            VALUES (?, ?, ?, ?, ?, 1, 0.08, ?)
+        """, (f"ORD-RZP-{int(time.time())}", tenant_id, customer_id, "PROD-002", datetime.now().strftime("%Y-%m-%d"), amount))
+
+        cursor.execute("""
+            UPDATE executions SET razorpay_payment_id = ?, status = 'paid'
+            WHERE razorpay_order_id = ?
+        """, (payment_entity.get("id"), order_id))
 
         log_audit(
-            "Razorpay Webhook",
-            "PAYMENT_CAPTURED",
-            {"payment_id": payment_id, "order_id": order_id, "amount": amount, "customer_id": customer_id},
-            payload_hash=payload_hash
+            agent_or_user="Razorpay Webhook",
+            action_type="PAYMENT_CAPTURED",
+            details={"order_id": order_id, "amount": amount, "customer_id": customer_id},
+            payload_hash=payload_hash,
+            tenant_id=tenant_id
         )
-        action_summary = f"Processed payment.captured for ₹{amount:,.2f} from {email}"
+        summary = f"Processed payment capture for ₹{amount:.2f}"
 
-    elif event_name == "payment.failed":
-        # 1. Insert cart event abandonment/failure
-        cart_event_id = f"CART-RZP-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        session_id = f"SESS-RZP-{datetime.now().strftime('%H%M%S')}"
+    elif event_type == "payment.failed":
+        # Handle payment failure: penalize decision confidence and update execution status
+        payment_id = payment_entity.get("id", "UNKNOWN")
+        error_desc = payment_entity.get("error_description", "Payment gateway failed transaction")
+        customer_id = payment_entity.get("notes", {}).get("customer_id", "CUST-00001")
+        product_id = payment_entity.get("notes", {}).get("product_id", "PROD-002")
+        campaign_id = payment_entity.get("notes", {}).get("campaign_id")
+        tenant_id = payment_entity.get("notes", {}).get("tenant_id", "tenant_store_alpha")
+
+        # Record abandonment event
+        session_id = f"SESS-FAIL-{int(time.time())}"
+        cart_event_id = f"CART-FAIL-{int(time.time())}"
         cursor.execute("""
-            INSERT INTO cart_events (cart_event_id, session_id, customer_id, product_id, event_type, event_time)
-            VALUES (?, ?, ?, ?, 'abandon', ?)
-        """, (cart_event_id, session_id, customer_id, product_id, datetime.now().isoformat()))
+            INSERT INTO sessions (session_id, tenant_id, customer_id, start_time, channel)
+            VALUES (?, ?, ?, ?, 'Razorpay Checkout')
+        """, (session_id, tenant_id, customer_id, datetime.now().isoformat()))
+        cursor.execute("""
+            INSERT INTO cart_events (cart_event_id, tenant_id, session_id, customer_id, product_id, event_type, event_time)
+            VALUES (?, ?, ?, ?, ?, 'abandon', ?)
+        """, (cart_event_id, tenant_id, session_id, customer_id, product_id, datetime.now().isoformat()))
 
-        # 2. Reduce decision confidence for this play
+        # Update execution failure status if campaign_id present
+        if campaign_id:
+            cursor.execute("""
+                UPDATE executions 
+                SET status = 'failed', error_message = ?
+                WHERE campaign_id = ?
+            """, (f"Razorpay Payment Failed: {error_desc}", campaign_id))
+
+        # Adjust decision opportunity confidence downwards (-0.08 penalty)
         cursor.execute("""
             UPDATE opportunities 
-            SET confidence = MAX(confidence - 0.08, 0.1)
-            WHERE opportunity_id = 'OPP-001' OR recommended_action LIKE '%Earbud%'
-        """)
-
-        # 3. Update execution failure status if linked
-        cursor.execute("""
-            UPDATE executions 
-            SET status = 'failed', error_message = ?
-            WHERE campaign_id = ?
-        """, (error_description, campaign_id))
-
-        conn.commit()
+            SET confidence = MAX(0.2, confidence - 0.08)
+            WHERE status = 'open' AND tenant_id = ?
+        """, (tenant_id,))
 
         log_audit(
-            "Razorpay Webhook",
-            "PAYMENT_FAILED_TRIGGER",
-            {
+            agent_or_user="Razorpay Webhook",
+            action_type="PAYMENT_FAILED_ALERT",
+            details={
                 "payment_id": payment_id,
-                "reason": error_description,
+                "error": error_desc,
                 "customer_id": customer_id,
-                "product_id": product_id,
-                "confidence_penalty": -0.08
+                "confidence_penalty_applied": -0.08
             },
-            payload_hash=payload_hash
+            payload_hash=payload_hash,
+            tenant_id=tenant_id
         )
-        action_summary = f"Recorded payment.failed for customer {customer_id} on {product_id}. Confidence penalized by -0.08."
+        summary = f"Recorded payment failure: {error_desc}. Applied confidence penalty."
 
     else:
-        log_audit("Razorpay Webhook", "EVENT_RECEIVED", {"event": event_name}, payload_hash=payload_hash)
-        action_summary = f"Logged Razorpay event: {event_name}"
+        summary = f"Ignored unhandled event: {event_type}"
 
+    conn.commit()
     conn.close()
 
     return {
         "status": "success",
-        "event": event_name,
-        "payment_id": payment_id,
-        "amount": amount,
-        "summary": action_summary,
-        "payload_hash": payload_hash,
-        "processed_at": datetime.now().isoformat()
+        "event": event_type,
+        "summary": summary,
+        "payload_hash": payload_hash
     }
