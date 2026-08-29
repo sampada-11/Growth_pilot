@@ -1,13 +1,16 @@
 """
 Database Models & SQLite Schema for GrowthPilot
+Extended with Phase 1: Razorpay Integration & Phase 2: Supabase Postgres/Multi-Tenant Schema
 """
 import sqlite3
 import json
 import os
+import hashlib
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "growthpilot.db")
+DEFAULT_TENANT_ID = os.environ.get("DEMO_TENANT_ID", "tenant_demo_001")
 
 
 def get_db_connection():
@@ -18,13 +21,14 @@ def get_db_connection():
 
 
 def init_db():
-    """Creates SQLite database tables according to §18 ER Diagram."""
+    """Creates SQLite database tables according to ER Diagram + Razorpay & Multi-Tenant extensions."""
     conn = get_db_connection()
     cursor = conn.cursor()
 
     cursor.executescript("""
     CREATE TABLE IF NOT EXISTS customers (
         customer_id TEXT PRIMARY KEY,
+        tenant_id TEXT DEFAULT 'tenant_demo_001',
         age INTEGER,
         segment TEXT,
         channel TEXT,
@@ -33,14 +37,19 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS products (
         product_id TEXT PRIMARY KEY,
+        tenant_id TEXT DEFAULT 'tenant_demo_001',
         name TEXT,
         category TEXT,
         base_price REAL,
+        margin_pct REAL DEFAULT 40.0,
+        inventory_count INTEGER DEFAULT 100,
+        inventory_urgency_factor REAL DEFAULT 1.0,
         launch_date TEXT
     );
 
     CREATE TABLE IF NOT EXISTS order_items (
         order_item_id TEXT PRIMARY KEY,
+        tenant_id TEXT DEFAULT 'tenant_demo_001',
         customer_id TEXT,
         product_id TEXT,
         purchase_date TEXT,
@@ -53,6 +62,7 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS sessions (
         session_id TEXT PRIMARY KEY,
+        tenant_id TEXT DEFAULT 'tenant_demo_001',
         customer_id TEXT,
         start_time TEXT,
         channel TEXT,
@@ -61,6 +71,7 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS cart_events (
         cart_event_id TEXT PRIMARY KEY,
+        tenant_id TEXT DEFAULT 'tenant_demo_001',
         session_id TEXT,
         customer_id TEXT,
         product_id TEXT,
@@ -72,6 +83,7 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS insights (
         insight_id TEXT PRIMARY KEY,
+        tenant_id TEXT DEFAULT 'tenant_demo_001',
         type TEXT,
         description TEXT,
         evidence TEXT, -- JSON string
@@ -80,6 +92,7 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS opportunities (
         opportunity_id TEXT PRIMARY KEY,
+        tenant_id TEXT DEFAULT 'tenant_demo_001',
         insight_id TEXT,
         problem TEXT,
         expected_impact REAL,
@@ -94,10 +107,12 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS campaign_proposals (
         campaign_id TEXT PRIMARY KEY,
+        tenant_id TEXT DEFAULT 'tenant_demo_001',
         opportunity_id TEXT,
         target_segment TEXT,
         product_id TEXT,
         offer_pct REAL,
+        discount_band TEXT, -- JSON string (min_pct, max_pct, recommended_pct)
         channel TEXT,
         generated_copy TEXT,
         expected_roi REAL,
@@ -110,6 +125,7 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS campaign_interactions (
         interaction_id TEXT PRIMARY KEY,
+        tenant_id TEXT DEFAULT 'tenant_demo_001',
         campaign_id TEXT,
         customer_id TEXT,
         interaction_type TEXT,
@@ -120,17 +136,24 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS executions (
         execution_id TEXT PRIMARY KEY,
+        tenant_id TEXT DEFAULT 'tenant_demo_001',
         campaign_id TEXT,
         approved_by TEXT,
         justification TEXT,
         executed_at TEXT,
         mock_api_status TEXT,
         execution_token TEXT,
+        razorpay_order_id TEXT,
+        razorpay_payment_link_id TEXT,
+        razorpay_payment_id TEXT,
+        status TEXT DEFAULT 'executed', -- 'executed' or 'failed'
+        error_message TEXT,
         FOREIGN KEY (campaign_id) REFERENCES campaign_proposals(campaign_id)
     );
 
     CREATE TABLE IF NOT EXISTS experiment_results (
         result_id TEXT PRIMARY KEY,
+        tenant_id TEXT DEFAULT 'tenant_demo_001',
         execution_id TEXT,
         expected_conversion REAL,
         actual_conversion REAL,
@@ -144,25 +167,74 @@ def init_db():
 
     CREATE TABLE IF NOT EXISTS audit_logs (
         log_id TEXT PRIMARY KEY,
+        tenant_id TEXT DEFAULT 'tenant_demo_001',
         timestamp TEXT,
         agent_or_user TEXT,
         action_type TEXT,
-        details TEXT -- JSON string
+        payload_hash TEXT,
+        details TEXT -- JSON string (sanitized, non-sensitive)
     );
     """)
+
+    # Dynamic column migrations for existing SQLite database files
+    def add_column_if_not_exists(table, column, col_type):
+        try:
+            cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
+        except sqlite3.OperationalError:
+            pass # Column already exists
+
+    tables = [
+        "customers", "products", "order_items", "sessions", "cart_events",
+        "insights", "opportunities", "campaign_proposals", "campaign_interactions",
+        "executions", "experiment_results", "audit_logs"
+    ]
+    for tbl in tables:
+        add_column_if_not_exists(tbl, "tenant_id", "TEXT DEFAULT 'tenant_demo_001'")
+
+    add_column_if_not_exists("products", "margin_pct", "REAL DEFAULT 40.0")
+    add_column_if_not_exists("products", "inventory_count", "INTEGER DEFAULT 100")
+    add_column_if_not_exists("products", "inventory_urgency_factor", "REAL DEFAULT 1.0")
+    add_column_if_not_exists("campaign_proposals", "discount_band", "TEXT")
+    add_column_if_not_exists("executions", "razorpay_order_id", "TEXT")
+    add_column_if_not_exists("executions", "razorpay_payment_link_id", "TEXT")
+    add_column_if_not_exists("executions", "razorpay_payment_id", "TEXT")
+    add_column_if_not_exists("executions", "status", "TEXT DEFAULT 'executed'")
+    add_column_if_not_exists("executions", "error_message", "TEXT")
+    add_column_if_not_exists("audit_logs", "payload_hash", "TEXT")
 
     conn.commit()
     conn.close()
 
 
-def log_audit(agent_or_user: str, action_type: str, details: Dict[str, Any]):
-    """Logs an agent decision or human action into the audit trail."""
+def sanitize_details(details: Dict[str, Any]) -> Dict[str, Any]:
+    """Removes sensitive payment data (card numbers, CVVs, full auth tokens) before logging."""
+    sensitive_keys = {"card", "cvv", "card_number", "secret", "password", "key_secret"}
+    sanitized = {}
+    for k, v in details.items():
+        if any(s in k.lower() for s in sensitive_keys):
+            sanitized[k] = "[REDACTED]"
+        elif isinstance(v, dict):
+            sanitized[k] = sanitize_details(v)
+        else:
+            sanitized[k] = v
+    return sanitized
+
+
+def log_audit(
+    agent_or_user: str,
+    action_type: str,
+    details: Dict[str, Any],
+    payload_hash: Optional[str] = None,
+    tenant_id: str = DEFAULT_TENANT_ID
+):
+    """Logs an agent decision, webhook, or human action into the audit trail with sanitized details."""
     conn = get_db_connection()
     cursor = conn.cursor()
     log_id = f"LOG-{datetime.now().strftime('%Y%m%d%H%M%S%f')}"
+    sanitized = sanitize_details(details)
     cursor.execute("""
-        INSERT INTO audit_logs (log_id, timestamp, agent_or_user, action_type, details)
-        VALUES (?, ?, ?, ?, ?)
-    """, (log_id, datetime.now().isoformat(), agent_or_user, action_type, json.dumps(details)))
+        INSERT INTO audit_logs (log_id, tenant_id, timestamp, agent_or_user, action_type, payload_hash, details)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (log_id, tenant_id, datetime.now().isoformat(), agent_or_user, action_type, payload_hash, json.dumps(sanitized)))
     conn.commit()
     conn.close()

@@ -1,93 +1,82 @@
-# GrowthPilot (AI Commerce Growth Agent)
+# GrowthPilot (AI Commerce Growth Agent) — Phase 2 Architecture
 
 > *"Your business's AI growth team — it finds the opportunity, decides the play, and runs it."*
 
-GrowthPilot is an autonomous multi-agent AI system for e-commerce sellers that closes the loop between analytics and action. It ingests customer, product, order, session, and cart funnel data; a team of specialized AI agents detects growth opportunities, ranks decisions using transparent scoring, drafts targeted campaign offers, executes them via a mock marketing API under rule-based guardrails, and measures post-campaign outcomes in a closed loop.
+GrowthPilot is an autonomous multi-agent AI system for e-commerce sellers that closes the loop between analytics and action. Phase 2 introduces **Supabase Postgres** storage with multi-tenant isolation, **Row Level Security (RLS)**, **Redis event queue transport**, **Redis rate limiting**, and **30–60s caching**, alongside live **Razorpay Test-Mode** execution.
 
 ---
 
-## 🌟 Key Features
+## 🌟 What's New in Phase 2
 
-1. **5-Agent Multi-Agent Architecture**:
-   - **Insight Agent**: Vectorized RFM customer segmentation, Logistic Regression churn risk scoring, rolling revenue trend slopes, and cart abandonment analytics.
-   - **Growth Decision Agent**: Transparent opportunity ranking using `priority_score = expected_impact_revenue * confidence * urgency_factor`.
-   - **Campaign & Pricing Agent**: Price elasticity band estimation and AI message copy generation.
-   - **Experiment Agent**: Pre vs. Post KPI outcome measurement, statistical z-test evaluation, AI verdict generation, and decision confidence feedback learning.
-   - **Orchestrator & Guardrail Agent**: State graph coordinator, rule-based guardrails (Low, Medium, High risk tiers), and audit trail logger.
+1. **Supabase Postgres & Multi-Tenant Schema**:
+   - SQLAlchemy ORM models + Alembic versioned migrations (`alembic/versions/`).
+   - `tenant_id` attached to all business data tables with demo tenant (`tenant_demo_001`).
+   - Row Level Security (RLS) policies configured for PostgreSQL.
+   - Dual-engine support: Supabase Postgres via `DATABASE_URL` with SQLite zero-ops local fallback.
 
-2. **Deterministic Guardrails Layer**:
-   - Discount ceiling checks (max 15%).
-   - Weekly budget cap limits ($50,000).
-   - Minimum evidence sample size threshold (>=30 customers).
-   - Multi-tier human approval workflow with justification inputs for high-risk actions.
+2. **Redis Event Queue & Worker**:
+   - Razorpay verified webhooks (`payment.captured`, `payment.failed`, `order.paid`) are published to the Redis event queue (`growthpilot:events:queue`).
+   - Asynchronous Redis worker process consumes events and triggers the agent re-analysis pipeline without blocking webhook responses.
+   - Zero-dependency local execution via automatic in-memory fallback if Redis server is offline.
 
-3. **Seeded Demo Scenario (§35)**:
-   - 6-month synthetic dataset (12,000 customers, 40 products, ~65,000 orders, ~90,000 sessions).
-   - Embedded pattern: 18-25 age cohort buying Wireless Earbuds Pro (PROD-001) with a 34% co-purchase interest for Earbud Case & Charging Stand (PROD-002), but only 6% actual conversion and 71% cart abandonment (vs 45% baseline).
-   - Automatically surfaces the #1 growth opportunity yielding **₹81,600 expected revenue lift**.
+3. **Redis Rate Limiting**:
+   - Sliding-window rate limiter per client IP:
+     - `/api/webhooks/razorpay`: 30 req/min
+     - `/api/campaigns/{id}/approve`: 15 req/min
+     - `/api/campaigns/{id}/execute`: 15 req/min
+   - Rejects excessive bursts with HTTP `429 Too Many Requests`.
 
-4. **Dashboard Views**:
-   - Executive Overview
-   - Customer Intelligence
-   - Product Intelligence
-   - Growth Opportunities
-   - Campaign Studio
-   - Experiment Results
-   - Full Audit Trail Modal
+4. **Redis Caching (30–60s TTL)**:
+   - High-throughput Redis caching for `/api/overview` and `/api/opportunities` (sub-millisecond repeat queries).
+   - Dynamic cache invalidation triggered on agent pipeline runs or campaign executions.
+
+5. **Dynamic Discount Band Guardrails**:
+   - Deterministic `compute_discount_band(product, segment, opportunity)` calculating `(min_pct, max_pct, recommended_pct)` using product gross margin (`margin_pct`), inventory urgency factor, and customer CLV.
+   - Dynamic ceiling replaces static 15% discount caps.
+
+6. **End-to-End Razorpay Failure Handling**:
+   - `payment.failed` event triggers an automated confidence penalty (-0.08) in the Decision Agent and records the failure in `executions` and `audit_logs` with a SHA-256 payload hash (sensitive card details are never stored).
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Setup & Running
 
-### 1. Requirements & Setup
+### 1. Configure Environment
 
-Ensure Python 3.10+ is installed.
-
+Copy `.env.example` to `.env`:
 ```bash
-# Clone/navigate to project directory
-cd Smart_shop_agent
-
-# Install dependencies
-pip install -r requirements.txt
+cp .env.example .env
 ```
 
-### 2. Run Application (One-Click Launcher)
+Set your Supabase and Razorpay credentials in `.env`:
+```ini
+DATABASE_URL=postgresql://postgres.yourprojectref:yourpassword@aws-0-region.pooler.supabase.com:6543/postgres?sslmode=require
+REDIS_URL=redis://localhost:6379/0
+RAZORPAY_KEY_ID=rzp_test_your_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+RAZORPAY_WEBHOOK_SECRET=your_webhook_secret_key
+DEMO_TENANT_ID=tenant_demo_001
+```
+
+### 2. Run Database Migrations (Supabase Postgres)
+
+```bash
+alembic upgrade head
+```
+
+### 3. Launch Application
 
 ```bash
 python run_growthpilot.py
 ```
-
-This single command will:
-1. Initialize the SQLite database (`growthpilot.db`) and seed the 6-month synthetic dataset.
-2. Run the multi-agent detection and decision pipeline.
-3. Launch the FastAPI backend server and serve the dashboard UI at **http://127.0.0.1:8000/**.
+- Dashboard UI: **http://127.0.0.1:8000/**
+- Interactive API Docs: **http://127.0.0.1:8000/docs**
 
 ---
 
-## 🔌 API Endpoints Summary
+## 🧪 Running Tests
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/overview` | Executive Overview metrics, charts & top opportunities |
-| `GET` | `/api/customers/segments` | RFM customer segment breakdown & CLV |
-| `GET` | `/api/customers/churn-risk` | High churn risk customer list with scores |
-| `GET` | `/api/products/trends` | Product growth/decline slopes & category trends |
-| `GET` | `/api/opportunities` | Ranked growth opportunities list |
-| `GET` | `/api/opportunities/{id}` | Detail and evidence snippet for opportunity |
-| `POST` | `/api/opportunities/{id}/campaign` | Trigger Campaign Agent to draft proposal |
-| `GET` | `/api/campaigns/{id}` | Campaign proposal detail & risk tier |
-| `POST` | `/api/campaigns/{id}/approve` | Human approval & mock marketing API execution |
-| `GET` | `/api/experiments/{id}` | Post-campaign experiment outcome & AI verdict |
-| `GET` | `/api/audit-log` | Full audit log of agent decisions & human actions |
-
----
-
-## 🎬 3-Minute Hackathon Demo Script
-
-- **0:00–0:20**: *"E-commerce sellers drown in dashboards. GrowthPilot is an autonomous AI agent team that finds opportunities, decides plays, and executes them."*
-- **0:20–0:50**: Show **Executive Overview** — point out live revenue/conversion numbers and the #1 flagged opportunity (71% Cart Abandonment on Earbud Stand).
-- **0:50–1:30**: Open **Growth Opportunities** — highlight the evidence breakdown (850 customers, 18-25 cohort, 6% conversion vs 22% baseline).
-- **1:30–2:00**: Click **"Create Campaign"** — show Campaign Studio with generated 8% offer + AI message copy and Medium Risk badge. Click **"Approve"**.
-- **2:00–2:20**: Show the **Mock Marketing API Execution Receipt** generated in real-time.
-- **2:20–2:50**: Jump to **Experiment Results** — read the Before → AI Action → After comparison panel and AI verdict sentence (*"Campaign succeeded — conversion nearly tripled..."*).
-- **2:50–3:00**: Close: *"Detect, decide, act, and measure — one loop, five agents, real guardrails."*
+```bash
+python -m unittest discover -s tests -p "test_*.py"
+```
+Runs all 21 test suites across multi-agent orchestration, Razorpay test mode, Redis caching, rate limiting, and dynamic discount guardrails.

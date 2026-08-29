@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GrowthPilot — AI Commerce Growth Agent Dashboard</title>
+    <title>GrowthPilot — AI Commerce Growth Agent Dashboard (Phase 2)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js CDN -->
@@ -28,7 +28,7 @@
                     <i class="fa-solid fa-compass-drafting"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight">GrowthPilot</h1>
+                    <h1 class="text-xl font-bold tracking-tight">GrowthPilot <span class="text-xs bg-indigo-500/30 text-indigo-300 font-mono px-2 py-0.5 rounded border border-indigo-400/30 ml-2">Phase 2: Supabase + Redis</span></h1>
                     <p class="text-xs text-slate-400">Autonomous AI Commerce Growth Agent Team</p>
                 </div>
             </div>
@@ -37,14 +37,21 @@
             <div class="hidden lg:flex items-center space-x-2 text-xs bg-slate-800 px-4 py-2 rounded-full border border-slate-700">
                 <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span class="text-slate-300 font-medium">Pipeline:</span>
-                <span class="text-sky-400">Insight Agent</span> <i class="fa-solid fa-chevron-right text-slate-600 text-[10px]"></i>
-                <span class="text-sky-400">Decision Agent</span> <i class="fa-solid fa-chevron-right text-slate-600 text-[10px]"></i>
-                <span class="text-sky-400">Campaign Agent</span> <i class="fa-solid fa-chevron-right text-slate-600 text-[10px]"></i>
-                <span class="text-amber-400">Guardrail Gate</span> <i class="fa-solid fa-chevron-right text-slate-600 text-[10px]"></i>
-                <span class="text-emerald-400">Experiment Agent</span>
+                <span class="text-sky-400">Insight</span> <i class="fa-solid fa-chevron-right text-slate-600 text-[10px]"></i>
+                <span class="text-sky-400">Decision</span> <i class="fa-solid fa-chevron-right text-slate-600 text-[10px]"></i>
+                <span class="text-sky-400">Campaign</span> <i class="fa-solid fa-chevron-right text-slate-600 text-[10px]"></i>
+                <span class="text-amber-400">Dynamic Guardrails</span> <i class="fa-solid fa-chevron-right text-slate-600 text-[10px]"></i>
+                <span class="text-indigo-400">Razorpay+Redis</span> <i class="fa-solid fa-chevron-right text-slate-600 text-[10px]"></i>
+                <span class="text-emerald-400">Experiment</span>
             </div>
 
             <div class="flex items-center space-x-3">
+                <button onclick="simulateRazorpayWebhook('payment.failed')" class="text-xs bg-rose-950 hover:bg-rose-900 text-rose-200 px-3 py-2 rounded-lg border border-rose-800 transition flex items-center gap-1.5 font-medium shadow-sm" title="Simulate payment failure webhook to test end-to-end failure handling">
+                    <i class="fa-solid fa-triangle-exclamation text-rose-400"></i> Sim Payment.Failed
+                </button>
+                <button onclick="simulateRazorpayWebhook('payment.captured')" class="text-xs bg-indigo-900 hover:bg-indigo-800 text-indigo-200 px-3 py-2 rounded-lg border border-indigo-700 transition flex items-center gap-1.5 font-medium shadow-sm" title="Simulate payment captured webhook via Redis queue">
+                    <i class="fa-solid fa-bolt text-amber-400"></i> Sim Payment.Captured
+                </button>
                 <button onclick="fetchAuditLog()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg border border-slate-700 transition flex items-center gap-2">
                     <i class="fa-solid fa-shield-halved"></i> Audit Trail
                 </button>
@@ -87,8 +94,13 @@
             <!-- AI Recommendation Banner -->
             <div class="bg-gradient-to-r from-sky-900 to-slate-900 text-white p-6 rounded-2xl shadow-sm border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div class="space-y-1 max-w-3xl">
-                    <div class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-sky-400 bg-sky-950/80 px-3 py-1 rounded-full border border-sky-800/50">
-                        <i class="fa-solid fa-sparkles"></i> AI Recommendation This Week
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sky-400 bg-sky-950/80 px-3 py-1 rounded-full border border-sky-800/50">
+                            <i class="fa-solid fa-sparkles"></i> AI Recommendation This Week
+                        </span>
+                        <span id="overview-cache-badge" class="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                            <i class="fa-solid fa-bolt text-amber-400"></i> Redis Caching 45s
+                        </span>
                     </div>
                     <h2 id="ai-recommendation-title" class="text-xl font-bold">71% Cart Abandonment Spike on Earbud Charging Stand (18-25 Segment)</h2>
                     <p id="ai-recommendation-desc" class="text-slate-300 text-sm">Launching an 8% targeted offer is expected to recover ₹81,600 in lost revenue with 0.78 confidence.</p>
@@ -256,7 +268,7 @@
         <section id="view-campaigns" class="space-y-6 hidden">
             <div>
                 <h2 class="text-xl font-bold text-slate-900">Campaign Studio</h2>
-                <p class="text-xs text-slate-500">Review AI-Drafted Campaign Proposal, Risk Tier Guardrails & One-Click Approval</p>
+                <p class="text-xs text-slate-500">Review AI-Drafted Campaign Proposal, Dynamic Discount Band & Razorpay Execution</p>
             </div>
 
             <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm max-w-4xl space-y-6">
@@ -288,6 +300,34 @@
                     </div>
                 </div>
 
+                <!-- Phase 1 & 2 Dynamic Discount Band Badge -->
+                <div class="bg-amber-50/70 border border-amber-200 p-4 rounded-xl flex items-center justify-between text-xs">
+                    <div>
+                        <span class="text-[10px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1">
+                            <i class="fa-solid fa-calculator"></i> Dynamic Discount Band (§3 Dynamic Guardrails)
+                        </span>
+                        <p id="studio-discount-band-text" class="text-slate-700 mt-0.5">
+                            Allowed Band: <strong>3.0% - 12.0%</strong> | Product Margin: <strong>50.0%</strong> | Inventory Urgency: <strong>1.3x</strong>
+                        </p>
+                    </div>
+                    <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-lg">
+                        <i class="fa-solid fa-check"></i> Within Dynamic Ceiling
+                    </span>
+                </div>
+
+                <!-- Razorpay Payment Link Integration Badge -->
+                <div id="razorpay-link-box" class="bg-indigo-50 border border-indigo-200 p-4 rounded-xl flex items-center justify-between">
+                    <div class="space-y-0.5">
+                        <span class="text-[10px] font-bold text-indigo-700 uppercase tracking-wider flex items-center gap-1">
+                            <i class="fa-solid fa-credit-card"></i> Razorpay Test-Mode Payment Link Generated
+                        </span>
+                        <p id="razorpay-link-url" class="text-xs font-mono font-bold text-indigo-900">https://rzp.io/i/test_plink_85012</p>
+                    </div>
+                    <a id="razorpay-link-btn" href="#" target="_blank" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow-sm">
+                        Test Payment Link <i class="fa-solid fa-arrow-up-right-from-square ml-1"></i>
+                    </a>
+                </div>
+
                 <!-- Generated Message Copy Box -->
                 <div class="space-y-2">
                     <label class="text-xs font-bold text-slate-700 block">AI-Generated Message Copy (Editable)</label>
@@ -302,16 +342,16 @@
 
                 <!-- Action Button Controls -->
                 <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
-                    <span class="text-xs text-slate-400"><i class="fa-solid fa-circle-check text-emerald-500"></i> Guardrails evaluated: Ceiling & Budget checks passed.</span>
+                    <span class="text-xs text-slate-400"><i class="fa-solid fa-circle-check text-emerald-500"></i> Rate Limiter & Guardrails active.</span>
                     <button onclick="approveCampaign()" id="btn-approve" class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition flex items-center gap-2">
-                        <i class="fa-solid fa-check"></i> Approve & Execute via Marketing API
+                        <i class="fa-solid fa-check"></i> Approve & Create Razorpay Order
                     </button>
                 </div>
 
                 <!-- Receipt Output Box -->
                 <div id="execution-receipt-box" class="hidden bg-slate-900 text-slate-200 p-4 rounded-xl text-xs space-y-2 font-mono">
                     <div class="text-emerald-400 font-bold flex items-center gap-2">
-                        <i class="fa-solid fa-circle-check"></i> Mock Marketing API Execution Receipt Received
+                        <i class="fa-solid fa-circle-check"></i> Razorpay Test Order Created & Marketing Dispatch Confirmed
                     </div>
                     <pre id="execution-receipt-content" class="whitespace-pre-wrap text-[11px] text-slate-300"></pre>
                 </div>
@@ -380,7 +420,7 @@
         <div class="bg-white rounded-2xl shadow-xl max-w-3xl w-full p-6 space-y-4 max-h-[85vh] flex flex-col">
             <div class="flex justify-between items-center pb-4 border-b border-slate-100">
                 <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <i class="fa-solid fa-shield-halved text-sky-600"></i> Full Decision & Approval Audit Log
+                    <i class="fa-solid fa-shield-halved text-sky-600"></i> Full Decision & Approval Audit Log (with SHA-256 Hashes)
                 </h3>
                 <button onclick="closeModal('modal-audit')" class="text-slate-400 hover:text-slate-600 text-lg">
                     <i class="fa-solid fa-xmark"></i>
@@ -421,6 +461,11 @@
                 document.getElementById("metric-revenue").innerText = "₹" + data.headline_metrics.total_revenue.toLocaleString('en-IN', {maximumFractionDigits: 2});
                 document.getElementById("metric-conversion").innerText = data.headline_metrics.conversion_rate_pct + "%";
                 document.getElementById("metric-opps").innerText = data.headline_metrics.active_alerts_count + 1;
+
+                if (data._cached) {
+                    document.getElementById("overview-cache-badge").innerHTML = `<i class="fa-solid fa-bolt text-emerald-400"></i> Redis Cached (<1ms)`;
+                    document.getElementById("overview-cache-badge").classList.add("text-emerald-300", "border-emerald-700");
+                }
 
                 const listEl = document.getElementById("overview-opps-list");
                 listEl.innerHTML = "";
@@ -547,6 +592,16 @@
                 document.getElementById("studio-impact").innerText = "₹81,600.00";
                 document.getElementById("studio-copy").value = proposal.generated_copy;
 
+                if (proposal.discount_band) {
+                    document.getElementById("studio-discount-band-text").innerHTML = 
+                        `Allowed Band: <strong>${proposal.discount_band.min_pct}% - ${proposal.discount_band.max_pct}%</strong> | Margin: <strong>${proposal.discount_band.margin_pct}%</strong> | Urgency: <strong>${proposal.discount_band.inventory_urgency}x</strong>`;
+                }
+
+                if (proposal.razorpay_payment_link) {
+                    document.getElementById("razorpay-link-url").innerText = proposal.razorpay_payment_link;
+                    document.getElementById("razorpay-link-btn").href = proposal.razorpay_payment_link;
+                }
+
                 switchTab("campaigns");
             } catch (err) {
                 console.error(err);
@@ -556,7 +611,7 @@
         async function approveCampaign() {
             const btn = document.getElementById("btn-approve");
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Executing...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Creating Razorpay Order...`;
 
             try {
                 const res = await fetch(`/api/campaigns/${currentCampaignId}/approve`, {
@@ -567,11 +622,17 @@
                 const data = await res.json();
 
                 document.getElementById("execution-receipt-box").classList.remove("hidden");
-                document.getElementById("execution-receipt-content").innerText = JSON.stringify(data.mock_api_receipt, null, 2);
+                document.getElementById("execution-receipt-content").innerText = JSON.stringify({
+                    execution_id: data.execution_id,
+                    status: data.status,
+                    razorpay_order_id: data.razorpay_order_id,
+                    razorpay_payment_link_id: data.razorpay_payment_link_id,
+                    dispatch_receipt: data.mock_api_receipt
+                }, null, 2);
 
                 btn.classList.remove("bg-emerald-600", "hover:bg-emerald-500");
                 btn.classList.add("bg-slate-700");
-                btn.innerHTML = `<i class="fa-solid fa-check-double"></i> Executed Successfully`;
+                btn.innerHTML = `<i class="fa-solid fa-check-double"></i> Executed & Queued in Redis`;
 
                 setTimeout(() => {
                     switchTab("experiments");
@@ -579,7 +640,29 @@
             } catch (err) {
                 console.error(err);
                 btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-check"></i> Approve & Execute via Marketing API`;
+                btn.innerHTML = `<i class="fa-solid fa-check"></i> Approve & Create Razorpay Order`;
+            }
+        }
+
+        async function simulateRazorpayWebhook(eventType) {
+            try {
+                const res = await fetch("/api/razorpay/simulate-webhook", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        event: eventType,
+                        amount: 1104.0,
+                        customer_id: "CUST-00042",
+                        product_id: "PROD-002",
+                        error_description: eventType === "payment.failed" ? "Payment failed at authentication" : "Payment captured successfully"
+                    })
+                });
+                const data = await res.json();
+                alert(`Razorpay Webhook Simulated & Enqueued in Redis!\n\nEvent: ${data.event}\nStatus: ${data.summary}\nPayload SHA-256: ${data.payload_hash.substring(0, 16)}...\n\nRedis background worker will trigger agent re-analysis.`);
+                fetchOverview();
+                fetchOpportunities();
+            } catch (err) {
+                alert("Error triggering webhook: " + err);
             }
         }
 
@@ -591,13 +674,17 @@
                 container.innerHTML = "";
 
                 logs.forEach(l => {
+                    const hashDisplay = l.payload_hash ? `<span class="text-[10px] text-indigo-400 font-mono">SHA-256: ${l.payload_hash.substring(0, 16)}...</span>` : '';
                     container.innerHTML += `
-                        <div class="p-3 bg-slate-900 text-slate-200 rounded-xl space-y-1">
+                        <div class="p-3 bg-slate-900 text-slate-200 rounded-xl space-y-1 border border-slate-800">
                             <div class="flex justify-between text-[11px] text-slate-400">
                                 <span class="font-bold text-sky-400">${l.agent_or_user}</span>
                                 <span>${new Date(l.timestamp).toLocaleTimeString()}</span>
                             </div>
-                            <div class="font-bold text-emerald-400 text-xs">${l.action_type}</div>
+                            <div class="flex justify-between items-center">
+                                <div class="font-bold text-emerald-400 text-xs">${l.action_type}</div>
+                                ${hashDisplay}
+                            </div>
                             <pre class="text-[10px] text-slate-300 whitespace-pre-wrap">${JSON.stringify(l.details, null, 2)}</pre>
                         </div>
                     `;

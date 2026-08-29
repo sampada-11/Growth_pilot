@@ -1,5 +1,6 @@
 """
 FastAPI Server Entry Point for GrowthPilot
+Initializes Database, Supabase RLS, Redis Event Worker, and mounts APIs.
 """
 import os
 import uvicorn
@@ -8,17 +9,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
+from backend.app.db.models import init_db
+from backend.app.db.database import setup_supabase_rls
 from backend.app.db.seed_synthetic_data import seed_database
 from backend.app.agents.orchestrator import run_full_pipeline
+from backend.app.integrations.redis_client import start_redis_worker
 from backend.app.api.routes import router as api_router
 
 app = FastAPI(
     title="GrowthPilot - AI Commerce Growth Agent",
-    description="Autonomous multi-agent system closing the loop between e-commerce analytics and action.",
-    version="1.0.0"
+    description="Autonomous multi-agent system closing the loop between e-commerce analytics, Razorpay, Supabase, and Redis.",
+    version="2.0.0"
 )
 
-# CORS middleware for local development
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -38,11 +42,14 @@ if os.path.exists(FRONTEND_DIR):
 
 @app.on_event("startup")
 def on_startup():
-    """Initializes database and executes initial agent pipeline on server startup."""
-    print("Initializing GrowthPilot Backend...")
+    """Initializes database, Supabase RLS, seeds data, starts Redis background worker, and runs initial pipeline."""
+    print("Initializing GrowthPilot Backend (Phase 2: Supabase + Redis + Razorpay)...")
+    init_db()
+    setup_supabase_rls()
     seed_database(force=False)
+    start_redis_worker()
     run_full_pipeline()
-    print("GrowthPilot Backend startup complete. Pipeline ready.")
+    print("GrowthPilot Backend startup complete. Pipeline & Redis worker ready.")
 
 
 @app.get("/")
@@ -53,6 +60,7 @@ def read_root():
         return FileResponse(html_path)
     return {
         "service": "GrowthPilot (AI Commerce Growth Agent)",
+        "phase": "Phase 2: Supabase Postgres + Redis + Razorpay",
         "status": "online",
         "docs_url": "/docs",
         "api_overview": "/api/overview"
