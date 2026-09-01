@@ -90,7 +90,7 @@ def seed_database(force: bool = False):
         if 18 <= age <= 25 and len(earbud_buyers_18_25) < 850:
             earbud_buyers_18_25.append(c_id)
 
-    cursor.executemany("INSERT OR REPLACE INTO customers VALUES (?, ?, ?, ?, ?, ?)", customers_alpha)
+    cursor.executemany("INSERT OR REPLACE INTO customers (customer_id, tenant_id, age, segment, channel, signup_date) VALUES (?, ?, ?, ?, ?, ?)", customers_alpha)
 
     # 4. Generate Customers for Tenant B (PulseWear)
     customers_beta = []
@@ -102,7 +102,7 @@ def seed_database(force: bool = False):
         signup_dt = start_date + timedelta(days=random.randint(0, 90))
         customers_beta.append((c_id, TENANT_BETA, age, segment, channel, signup_dt.strftime("%Y-%m-%d")))
 
-    cursor.executemany("INSERT OR REPLACE INTO customers VALUES (?, ?, ?, ?, ?, ?)", customers_beta)
+    cursor.executemany("INSERT OR REPLACE INTO customers (customer_id, tenant_id, age, segment, channel, signup_date) VALUES (?, ?, ?, ?, ?, ?)", customers_beta)
 
     # 5. Orders, Sessions, Carts for Tenant A
     order_items = []
@@ -141,9 +141,9 @@ def seed_database(force: bool = False):
         s_id = f"SESS-B{session_count:05d}"
         sessions.append((s_id, TENANT_BETA, c_id, p_date.strftime("%Y-%m-%d %H:%M:%S"), "Strava Partner"))
 
-    cursor.executemany("INSERT OR REPLACE INTO order_items VALUES (?, ?, ?, ?, ?, ?, ?, ?)", order_items)
-    cursor.executemany("INSERT OR REPLACE INTO sessions VALUES (?, ?, ?, ?, ?)", sessions)
-    cursor.executemany("INSERT OR REPLACE INTO cart_events VALUES (?, ?, ?, ?, ?, ?, ?)", cart_events)
+    cursor.executemany("INSERT OR REPLACE INTO order_items (order_item_id, tenant_id, customer_id, product_id, purchase_date, quantity, discount_pct, revenue) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", order_items)
+    cursor.executemany("INSERT OR REPLACE INTO sessions (session_id, tenant_id, customer_id, start_time, channel) VALUES (?, ?, ?, ?, ?)", sessions)
+    cursor.executemany("INSERT OR REPLACE INTO cart_events (cart_event_id, tenant_id, session_id, customer_id, product_id, event_type, event_time) VALUES (?, ?, ?, ?, ?, ?, ?)", cart_events)
 
     conn.commit()
     conn.close()

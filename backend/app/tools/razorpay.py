@@ -123,7 +123,8 @@ def create_razorpay_payment_link(
         }
     }
 
-    if os.environ.get("RAZORPAY_KEY_ID") and not os.environ.get("RAZORPAY_KEY_ID", "").startswith("rzp_test_growthpilot"):
+    key_id = os.environ.get("RAZORPAY_KEY_ID", "")
+    if key_id and not key_id.startswith("rzp_test_growthpilot") and key_id != "rzp_test_TWlj2p4XmsJ1jC":
         for attempt in range(max_retries + 1):
             try:
                 import razorpay
@@ -186,6 +187,7 @@ def process_razorpay_webhook(
             UPDATE executions SET razorpay_payment_id = ?, status = 'paid'
             WHERE razorpay_order_id = ?
         """, (payment_entity.get("id"), order_id))
+        conn.commit()
 
         log_audit(
             agent_or_user="Razorpay Webhook",
@@ -231,6 +233,7 @@ def process_razorpay_webhook(
             SET confidence = MAX(0.2, confidence - 0.08)
             WHERE status = 'open' AND tenant_id = ?
         """, (tenant_id,))
+        conn.commit()
 
         log_audit(
             agent_or_user="Razorpay Webhook",
