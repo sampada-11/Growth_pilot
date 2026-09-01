@@ -5,6 +5,10 @@ import os
 import sys
 import uvicorn
 
+# ── Load .env FIRST so all os.environ.get() calls in sub-modules see the values ──
+from dotenv import load_dotenv
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"), override=True)
+
 # Ensure project root is in python path
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 

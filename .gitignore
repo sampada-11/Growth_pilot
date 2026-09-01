@@ -1,0 +1,54 @@
+# ── Secrets & credentials ─────────────────────────────────────────────
+.env
+*.pem
+*.key
+
+# ── Python bytecode ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# ── Databases ─────────────────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Virtual environments ──────────────────────────────────────────────
+venv/
+.venv/
+env/
+.env/
+
+# ── Distribution / build ──────────────────────────────────────────────
+dist/
+build/
+*.egg-info/
+*.egg
+
+# ── Pytest / coverage ─────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# ── Jupyter ───────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+
+# ── OS noise ──────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDE / editor ──────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── Alembic local state (keep versions/ tracked) ─────────────────────
+alembic/versions/__pycache__/
+
+# ── Logs ──────────────────────────────────────────────────────────────
+*.log
+logs/

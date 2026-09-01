@@ -253,6 +253,12 @@
                 <p class="text-xs text-slate-500">Review AI Campaign Proposal, Dynamic Discount Band & Razorpay Execution</p>
             </div>
 
+            <!-- Guide banner: shown until openCampaignStudio() fires -->
+            <div id="studio-guide-banner" class="bg-sky-50 border border-sky-200 rounded-xl p-4 flex items-center gap-3 text-sm">
+                <i class="fa-solid fa-circle-info text-sky-500 text-lg"></i>
+                <span class="text-sky-800">To load a campaign, go to <button onclick="switchTab('opportunities')" class="font-bold underline text-sky-700 hover:text-sky-900">Growth Opportunities</button> and click <strong>"Create Campaign"</strong> on any opportunity card.</span>
+            </div>
+
             <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm max-w-4xl space-y-6">
                 <div class="flex justify-between items-start pb-6 border-b border-slate-100">
                     <div>
@@ -299,11 +305,11 @@
                         <span class="text-[10px] font-bold text-indigo-700 uppercase tracking-wider flex items-center gap-1">
                             <i class="fa-solid fa-credit-card"></i> Razorpay Test-Mode Payment Link
                         </span>
-                        <p id="razorpay-link-url" class="text-xs font-mono font-bold text-indigo-900">https://rzp.io/i/test_plink</p>
+                        <p id="razorpay-link-url" class="text-xs font-mono font-bold text-slate-400 italic">Generating link...</p>
                     </div>
-                    <a id="razorpay-link-btn" href="#" target="_blank" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow-sm">
+                    <button id="razorpay-link-btn" disabled onclick="openPaymentLinkInNewTab()" class="bg-indigo-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow-sm opacity-50 cursor-not-allowed">
                         Test Payment Link <i class="fa-solid fa-arrow-up-right-from-square ml-1"></i>
-                    </a>
+                    </button>
                 </div>
 
                 <div class="space-y-2">
@@ -579,9 +585,22 @@
                         `Allowed Band: <strong>${proposal.discount_band.min_pct}% - ${proposal.discount_band.max_pct}%</strong> | Margin: <strong>${proposal.discount_band.margin_pct}%</strong> | Urgency: <strong>${proposal.discount_band.inventory_urgency}x</strong>`;
                 }
 
+                // Hide guide banner once a real campaign is loaded
+                document.getElementById("studio-guide-banner").classList.add("hidden");
+
                 if (proposal.razorpay_payment_link) {
-                    document.getElementById("razorpay-link-url").innerText = proposal.razorpay_payment_link;
-                    document.getElementById("razorpay-link-btn").href = proposal.razorpay_payment_link;
+                    const urlEl = document.getElementById("razorpay-link-url");
+                    urlEl.innerText = proposal.razorpay_payment_link;
+                    urlEl.classList.remove("text-slate-400", "italic");
+                    urlEl.classList.add("text-indigo-900", "font-bold");
+
+                    const btn = document.getElementById("razorpay-link-btn");
+                    btn.dataset.url = proposal.razorpay_payment_link;
+                    btn.removeAttribute("disabled");
+                    btn.classList.remove("opacity-50", "cursor-not-allowed");
+                    btn.classList.add("hover:bg-indigo-500", "cursor-pointer");
+                } else {
+                    document.getElementById("razorpay-link-url").innerText = "Link unavailable (check server logs)";
                 }
 
                 switchTab("campaigns");
@@ -620,6 +639,14 @@
                 alert("Error approving campaign: " + err);
                 btn.disabled = false;
                 btn.innerHTML = `<i class="fa-solid fa-check"></i> Approve & Execute via Razorpay`;
+            }
+        }
+
+        function openPaymentLinkInNewTab() {
+            const btn = document.getElementById("razorpay-link-btn");
+            const url = btn.dataset.url;
+            if (url) {
+                window.open(url, "_blank", "noopener,noreferrer");
             }
         }
 

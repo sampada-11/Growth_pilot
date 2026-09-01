@@ -6,6 +6,23 @@ GrowthPilot is an autonomous multi-agent AI system for e-commerce sellers that c
 
 ---
 
+## 🏗️ Architecture
+
+![Architecture](docs/architecture_diagram.png)
+
+The diagram shows the full Phase 2 stack:
+
+| Layer | Components |
+|---|---|
+| **Client & Auth** | HTML5 Dashboard · Supabase JWT · `tenant_id` header |
+| **FastAPI Gateway** | Per-tenant rate limiting · 30–60 s Redis cache · `get_current_tenant` dependency |
+| **5-Agent AI Core** | Insight → Decision → Campaign & Pricing → Guardrail & Orchestrator → Experiment |
+| **Storage** | Supabase Postgres (RLS, 12 tables, Alembic migrations) · SQLite offline fallback |
+| **Event Bus** | Redis queue `growthpilot:events:queue` · Async background worker |
+| **Payments** | Razorpay Test-Mode Orders · Payment Links · HMAC-SHA256 webhook verification |
+
+---
+
 ## 🌟 What's New in Phase 2
 
 1. **Supabase Postgres & Multi-Tenant Schema**:
@@ -58,13 +75,22 @@ RAZORPAY_WEBHOOK_SECRET=your_webhook_secret_key
 DEMO_TENANT_ID=tenant_demo_001
 ```
 
-### 2. Run Database Migrations (Supabase Postgres)
+> **Tip — local-only run (no Postgres / Redis needed):**  
+> Leave `DATABASE_URL` pointing to SQLite (`sqlite:///./data/growthpilot.db`) and omit `REDIS_URL`. Both engines fall back automatically to in-process alternatives.
+
+### 2. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Run Database Migrations (Supabase Postgres)
 
 ```bash
 alembic upgrade head
 ```
 
-### 3. Launch Application
+### 4. Launch Application
 
 ```bash
 python run_growthpilot.py
@@ -74,9 +100,68 @@ python run_growthpilot.py
 
 ---
 
+## 📡 API Endpoints
+
+All endpoints are prefixed with `/api`.
+
+| Method | Endpoint | Description | Rate Limit |
+|--------|----------|-------------|------------|
+| `POST` | `/auth/login` | JWT login with email + password | — |
+| `POST` | `/auth/demo-login` | Instant demo tenant login (no password) | — |
+| `POST` | `/auth/signup` | Register new tenant account | — |
+| `GET`  | `/auth/me` | Current authenticated tenant profile | — |
+| `GET`  | `/overview` | Business KPIs (revenue, GMV, churn) — Redis cached 45 s | — |
+| `GET`  | `/customers/segments` | RFM customer segments for tenant | — |
+| `GET`  | `/customers/churn-risk` | High-churn-risk customer list | — |
+| `GET`  | `/products/trends` | Product velocity & inventory trends | — |
+| `GET`  | `/opportunities` | Ranked growth opportunities — Redis cached 60 s | — |
+| `GET`  | `/opportunities/{id}` | Single opportunity detail | — |
+| `POST` | `/opportunities/{id}/campaign` | Generate campaign + pricing via AI agents | — |
+| `GET`  | `/campaigns/{id}` | Campaign detail with guardrail status | — |
+| `POST` | `/campaigns/{id}/approve` | Human-in-the-loop approval gate | 15 req/min |
+| `POST` | `/campaigns/{id}/execute` | Dispatch campaign → Razorpay payment link | 15 req/min |
+| `GET`  | `/experiments/{id}` | A/B experiment results & hypothesis verdict | — |
+| `GET`  | `/audit-log` | Immutable audit trail (SHA-256 hashed payloads) | — |
+| `POST` | `/pipeline/run` | Trigger full 5-agent analysis pipeline | — |
+| `POST` | `/webhooks/razorpay` | **Razorpay webhook receiver** — HMAC-SHA256 verified; publishes `payment.captured` / `payment.failed` / `order.paid` to Redis event queue | 30 req/min |
+| `POST` | `/razorpay/simulate-webhook` | Dev/test helper — simulates a signed Razorpay webhook locally | — |
+
+---
+
 ## 🧪 Running Tests
 
+### Prerequisites
+
+**The test suite requires environment variables to be set.** Two options:
+
+**Option A — use `.env` file (recommended for local runs):**
+```bash
+cp .env.example .env   # fill in real or test-mode Razorpay keys
+python -m pytest tests/ -v
+```
+
+**Option B — run with dummy vars (CI / fresh clone, no credentials needed):**
+
+`tests/conftest.py` is included in the repo and automatically injects safe dummy environment variables (SQLite DB + in-memory Redis fallback + dummy Razorpay keys) so that all 21 test cases can run without live credentials:
+
+```bash
+python -m pytest tests/ -v
+```
+
+Or with `unittest` directly:
 ```bash
 python -m unittest discover -s tests -p "test_*.py"
 ```
-Runs all 21 test suites across multi-agent orchestration, Razorpay test mode, Redis caching, rate limiting, and dynamic discount guardrails.
+
+> **Note:** Tests that exercise the live Razorpay API (`test_01_create_razorpay_order`, `test_02_create_payment_link`) will operate in **test-mode simulation** when dummy keys are set — no real charges are made. Set real `rzp_test_*` keys in `.env` to validate against the Razorpay sandbox.
+
+Runs all **21 test cases** across:
+- Multi-agent orchestration
+- Razorpay test-mode order & payment link creation
+- HMAC-SHA256 webhook verification & SHA-256 payload hashing
+- End-to-end `payment.failed` confidence penalty flow
+- Redis event queue enqueue / pop
+- Redis caching (30–60 s TTL) & invalidation
+- Redis sliding-window rate limiting
+- Supabase Postgres / SQLAlchemy tenant session
+- Dynamic discount band guardrails
