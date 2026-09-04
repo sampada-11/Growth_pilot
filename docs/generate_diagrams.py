@@ -15,93 +15,113 @@ os.makedirs(DOCS_DIR, exist_ok=True)
 
 def generate_architecture_diagram():
     """Generates 5-Agent + Supabase + Redis Architecture Diagram."""
-    fig, ax = plt.subplots(figsize=(14, 8), dpi=200)
+    fig, ax = plt.subplots(figsize=(14, 10), dpi=200)
     ax.set_xlim(0, 14)
-    ax.set_ylim(0, 9)
+    ax.set_ylim(0, 11)
     ax.axis("off")
-    fig.patch.set_facecolor("#0f172a") # Slate 900
+    fig.patch.set_facecolor("#0f172a")  # Slate 900
 
-    # Title
-    ax.text(7, 8.5, "GrowthPilot — Autonomous AI Commerce Multi-Agent Architecture",
+    # ── Title ──────────────────────────────────────────────────────────────
+    ax.text(7, 10.5, "GrowthPilot — Autonomous AI Commerce Multi-Agent Architecture",
             fontsize=16, fontweight="bold", color="#ffffff", ha="center")
-    ax.text(7, 8.1, "Phase 3: Supabase Postgres (RLS) + Redis Queue/Cache + Razorpay Test Execution",
+    ax.text(7, 10.05, "Phase 3: Supabase Postgres (RLS) + Redis Queue/Cache + Razorpay Test Execution",
             fontsize=10, color="#94a3b8", ha="center")
 
-    # Layer 1: Client & Auth (Top Left)
-    rect1 = patches.FancyBboxPatch((0.5, 5.5), 3.2, 2.0, boxstyle="round,pad=0.2",
-                                  facecolor="#1e293b", edgecolor="#38bdf8", linewidth=2)
+    # ── Layer 1: Client & Auth (Top Left, y: 7.2 → 9.3) ───────────────────
+    rect1 = patches.FancyBboxPatch((0.5, 7.2), 3.2, 2.1, boxstyle="round,pad=0.2",
+                                   facecolor="#1e293b", edgecolor="#38bdf8", linewidth=2)
     ax.add_patch(rect1)
-    ax.text(2.1, 7.1, "CLIENT & AUTH LAYER", fontsize=11, fontweight="bold", color="#38bdf8", ha="center")
-    ax.text(2.1, 6.6, "• Next.js / HTML5 Dashboard", fontsize=9, color="#e2e8f0", ha="center")
-    ax.text(2.1, 6.2, "• Supabase JWT (RS256/HS256)", fontsize=9, color="#e2e8f0", ha="center")
-    ax.text(2.1, 5.8, "• Derived tenant_id Header", fontsize=9, color="#e2e8f0", ha="center")
+    ax.text(2.1, 9.0, "CLIENT & AUTH LAYER", fontsize=11, fontweight="bold", color="#38bdf8", ha="center")
+    ax.text(2.1, 8.5, "• Next.js / HTML5 Dashboard",    fontsize=9, color="#e2e8f0", ha="center")
+    ax.text(2.1, 8.1, "• Supabase JWT (RS256/HS256)",   fontsize=9, color="#e2e8f0", ha="center")
+    ax.text(2.1, 7.7, "• Derived tenant_id Header",     fontsize=9, color="#e2e8f0", ha="center")
 
-    # Layer 2: API Gateway & Rate Limiting (Middle Left)
-    rect2 = patches.FancyBboxPatch((4.2, 5.5), 3.5, 2.0, boxstyle="round,pad=0.2",
-                                  facecolor="#1e293b", edgecolor="#818cf8", linewidth=2)
+    # ── Layer 2: FastAPI Gateway (Top Right of left column, y: 7.2 → 9.3) ─
+    rect2 = patches.FancyBboxPatch((4.2, 7.2), 3.5, 2.1, boxstyle="round,pad=0.2",
+                                   facecolor="#1e293b", edgecolor="#818cf8", linewidth=2)
     ax.add_patch(rect2)
-    ax.text(5.95, 7.1, "FASTAPI API GATEWAY", fontsize=11, fontweight="bold", color="#818cf8", ha="center")
-    ax.text(5.95, 6.6, "• get_current_tenant Dependency", fontsize=9, color="#e2e8f0", ha="center")
-    ax.text(5.95, 6.2, "• Per-Tenant Redis Rate Limiting", fontsize=9, color="#e2e8f0", ha="center")
-    ax.text(5.95, 5.8, "• 30-60s Redis Cache (Overview)", fontsize=9, color="#e2e8f0", ha="center")
+    ax.text(5.95, 9.0, "FASTAPI API GATEWAY",              fontsize=11, fontweight="bold", color="#818cf8", ha="center")
+    ax.text(5.95, 8.5, "• get_current_tenant Dependency",  fontsize=9, color="#e2e8f0", ha="center")
+    ax.text(5.95, 8.1, "• Per-Tenant Redis Rate Limiting", fontsize=9, color="#e2e8f0", ha="center")
+    ax.text(5.95, 7.7, "• 30-60s Redis Cache (Overview)",  fontsize=9, color="#e2e8f0", ha="center")
 
-    # Layer 3: 5-Agent Core Engine (Right)
-    rect3 = patches.FancyBboxPatch((8.2, 3.2), 5.3, 4.3, boxstyle="round,pad=0.2",
-                                  facecolor="#1e293b", edgecolor="#34d399", linewidth=2)
+    # ── Layer 3: 5-Agent AI Core (Right column, y: 4.2 → 9.3) ────────────
+    # Gap between this box bottom (4.2) and Razorpay box top (3.6) = 0.6
+    rect3 = patches.FancyBboxPatch((8.2, 4.2), 5.3, 5.1, boxstyle="round,pad=0.2",
+                                   facecolor="#1e293b", edgecolor="#34d399", linewidth=2)
     ax.add_patch(rect3)
-    ax.text(10.85, 7.1, "5-AGENT AI REASONING CORE", fontsize=11, fontweight="bold", color="#34d399", ha="center")
-    
+    ax.text(10.85, 9.0, "5-AGENT AI REASONING CORE",
+            fontsize=11, fontweight="bold", color="#34d399", ha="center")
+
+    # Agent sub-boxes: evenly spaced, 0.65 step, starting at y=8.35 downward
     agent_boxes = [
-        ("1. Insight Agent", "Funnel anomaly & RFM segmentation", 6.4),
-        ("2. Growth Decision Agent", "Priority = Impact * Conf * Urgency", 5.6),
-        ("3. Campaign & Pricing Agent", "Dynamic discount band (margin + inventory)", 4.8),
-        ("4. Guardrail & Orchestrator", "Human-in-the-loop approval & RZP dispatch", 4.0),
-        ("5. Experiment Agent", "Pre-registered hypothesis vs actuals", 3.2)
+        ("1. Insight Agent",           "Funnel anomaly & RFM segmentation",             8.35),
+        ("2. Growth Decision Agent",   "Priority = Impact × Conf × Urgency",            7.65),
+        ("3. Campaign & Pricing",      "Dynamic discount band (margin + inventory)",     6.95),
+        ("4. Guardrail & Orchestrator","Human-in-the-loop approval & Razorpay dispatch", 6.25),
+        ("5. Experiment Agent",        "Z-test: pre-registered hypothesis vs actuals",   5.55),
     ]
     for name, desc, y_pos in agent_boxes:
-        r = patches.FancyBboxPatch((8.5, y_pos - 0.25), 4.7, 0.6, boxstyle="round,pad=0.1",
+        r = patches.FancyBboxPatch((8.5, y_pos - 0.28), 4.7, 0.58, boxstyle="round,pad=0.1",
                                    facecolor="#0f172a", edgecolor="#475569", linewidth=1)
         ax.add_patch(r)
-        ax.text(8.7, y_pos + 0.05, name, fontsize=8.5, fontweight="bold", color="#38bdf8")
-        ax.text(8.7, y_pos - 0.15, desc, fontsize=7.5, color="#94a3b8")
+        ax.text(8.72, y_pos + 0.06,  name, fontsize=8.5, fontweight="bold", color="#38bdf8")
+        ax.text(8.72, y_pos - 0.17,  desc, fontsize=7.5, color="#94a3b8")
 
-    # Layer 4: Storage & Infrastructure (Bottom Left)
-    rect4 = patches.FancyBboxPatch((0.5, 0.8), 7.2, 3.8, boxstyle="round,pad=0.2",
-                                  facecolor="#1e293b", edgecolor="#fbbf24", linewidth=2)
+    # ── Layer 4: Storage & Event Infrastructure (Bottom Left, y: 0.5 → 6.5) ─
+    # Inner content tops out at ~5.0; heading at 6.2 gives ~1.2 clearance above inner boxes
+    rect4 = patches.FancyBboxPatch((0.5, 0.5), 7.2, 6.0, boxstyle="round,pad=0.2",
+                                   facecolor="#1e293b", edgecolor="#fbbf24", linewidth=2)
     ax.add_patch(rect4)
-    ax.text(4.1, 4.2, "STORAGE & EVENT INFRASTRUCTURE", fontsize=11, fontweight="bold", color="#fbbf24", ha="center")
+    ax.text(4.1, 6.2, "STORAGE & EVENT INFRASTRUCTURE",
+            fontsize=11, fontweight="bold", color="#fbbf24", ha="center")
 
-    # Supabase Box
-    r_supa = patches.FancyBboxPatch((0.8, 1.2), 3.2, 2.6, boxstyle="round,pad=0.1",
+    # Supabase inner box (y: 0.9 → 5.7)
+    r_supa = patches.FancyBboxPatch((0.82, 0.85), 3.1, 4.85, boxstyle="round,pad=0.1",
                                     facecolor="#0f172a", edgecolor="#10b981", linewidth=1.5)
     ax.add_patch(r_supa)
-    ax.text(2.4, 3.4, "Supabase Postgres", fontsize=9.5, fontweight="bold", color="#34d399", ha="center")
-    ax.text(2.4, 2.9, "• Row Level Security (RLS)\n• tenant_id indexed on all 12 tables\n• Alembic versioned migrations\n• SQLite offline fallback",
-            fontsize=7.5, color="#cbd5e1", ha="center")
+    ax.text(2.37, 5.4,  "Supabase Postgres",                  fontsize=9.5, fontweight="bold", color="#34d399", ha="center")
+    ax.text(2.37, 4.85, "• Row Level Security (RLS)",         fontsize=8, color="#cbd5e1", ha="center")
+    ax.text(2.37, 4.35, "• tenant_id indexed — all 12 tables",fontsize=8, color="#cbd5e1", ha="center")
+    ax.text(2.37, 3.85, "• Alembic versioned migrations",     fontsize=8, color="#cbd5e1", ha="center")
+    ax.text(2.37, 3.35, "• SQLite offline fallback (WAL)",    fontsize=8, color="#cbd5e1", ha="center")
+    ax.text(2.37, 2.85, "• Dual-engine connection pooling",   fontsize=8, color="#cbd5e1", ha="center")
 
-    # Redis Box
-    r_redis = patches.FancyBboxPatch((4.3, 1.2), 3.1, 2.6, boxstyle="round,pad=0.1",
+    # Redis inner box (y: 0.9 → 5.7)
+    r_redis = patches.FancyBboxPatch((4.22, 0.85), 3.1, 4.85, boxstyle="round,pad=0.1",
                                      facecolor="#0f172a", edgecolor="#f87171", linewidth=1.5)
     ax.add_patch(r_redis)
-    ax.text(5.85, 3.4, "Redis Queue & Cache", fontsize=9.5, fontweight="bold", color="#f87171", ha="center")
-    ax.text(5.85, 2.9, "• growthpilot:events:queue\n• Async Background Worker\n• Per-Tenant Rate Limiting\n• 45s Query Cache + Invalidation",
-            fontsize=7.5, color="#cbd5e1", ha="center")
+    ax.text(5.77, 5.4,  "Redis Queue & Cache",               fontsize=9.5, fontweight="bold", color="#f87171", ha="center")
+    ax.text(5.77, 4.85, "• growthpilot:events:queue",        fontsize=8, color="#cbd5e1", ha="center")
+    ax.text(5.77, 4.35, "• Async Background Worker thread",  fontsize=8, color="#cbd5e1", ha="center")
+    ax.text(5.77, 3.85, "• Per-Tenant Sliding-Window Limit", fontsize=8, color="#cbd5e1", ha="center")
+    ax.text(5.77, 3.35, "• 45s Query Cache + Invalidation",  fontsize=8, color="#cbd5e1", ha="center")
+    ax.text(5.77, 2.85, "• Fakeredis fallback (offline)",    fontsize=8, color="#cbd5e1", ha="center")
 
-    # Razorpay Integration Box (Bottom Right)
-    rect5 = patches.FancyBboxPatch((8.2, 0.8), 5.3, 2.0, boxstyle="round,pad=0.2",
-                                  facecolor="#1e293b", edgecolor="#60a5fa", linewidth=2)
+    # ── Layer 5: Razorpay Execution (Bottom Right, y: 0.5 → 3.6) ──────────
+    # Clearly separate from agent core box (which starts at y=4.2); gap = 0.6
+    rect5 = patches.FancyBboxPatch((8.2, 0.5), 5.3, 3.1, boxstyle="round,pad=0.2",
+                                   facecolor="#1e293b", edgecolor="#60a5fa", linewidth=2)
     ax.add_patch(rect5)
-    ax.text(10.85, 2.4, "RAZORPAY TEST-MODE EXECUTION", fontsize=11, fontweight="bold", color="#60a5fa", ha="center")
-    ax.text(10.85, 1.9, "• Test-Mode Orders & Dynamic Payment Links API", fontsize=8.5, color="#e2e8f0", ha="center")
-    ax.text(10.85, 1.5, "• HMAC-SHA256 Webhook Verification & SHA-256 Payload Hashing", fontsize=8, color="#cbd5e1", ha="center")
-    ax.text(10.85, 1.1, "• payment.failed Penalty (-0.08 confidence)", fontsize=8, color="#cbd5e1", ha="center")
+    ax.text(10.85, 3.3,  "RAZORPAY TEST-MODE EXECUTION",
+            fontsize=11, fontweight="bold", color="#60a5fa", ha="center")
+    ax.text(10.85, 2.8,  "• Test-Mode Orders & Dynamic Payment Links API",
+            fontsize=8.5, color="#e2e8f0", ha="center")
+    ax.text(10.85, 2.35, "• HMAC-SHA256 Webhook Verification & SHA-256 Payload Hash",
+            fontsize=8, color="#cbd5e1", ha="center")
+    ax.text(10.85, 1.90, "• payment.failed Penalty  (−0.08 confidence degradation)",
+            fontsize=8, color="#cbd5e1", ha="center")
+    ax.text(10.85, 1.45, "• Exponential Backoff Retries on API failures",
+            fontsize=8, color="#cbd5e1", ha="center")
+    ax.text(10.85, 1.00, "• PCI-DSS Audit Trail — SHA-256 hashed, secrets redacted",
+            fontsize=8, color="#cbd5e1", ha="center")
 
-    # Connecting Arrows
-    arrow_style = dict(arrowstyle="->", color="#94a3b8", lw=1.5)
-    ax.annotate("", xy=(4.2, 6.5), xytext=(3.7, 6.5), arrowprops=arrow_style)
-    ax.annotate("", xy=(8.2, 6.5), xytext=(7.7, 6.5), arrowprops=arrow_style)
-    ax.annotate("", xy=(4.1, 4.6), xytext=(4.1, 5.5), arrowprops=arrow_style)
-    ax.annotate("", xy=(10.85, 3.2), xytext=(10.85, 2.8), arrowprops=arrow_style)
+    # ── Connecting Arrows ──────────────────────────────────────────────────
+    ap = dict(arrowstyle="->", color="#94a3b8", lw=1.5)
+    ax.annotate("", xy=(4.2, 8.2),   xytext=(3.7, 8.2),   arrowprops=ap)   # Auth → Gateway
+    ax.annotate("", xy=(8.2, 8.2),   xytext=(7.7, 8.2),   arrowprops=ap)   # Gateway → Agents
+    ax.annotate("", xy=(4.1, 6.5),   xytext=(4.1, 7.2),   arrowprops=ap)   # Gateway ↓ Storage
+    ax.annotate("", xy=(10.85, 4.2), xytext=(10.85, 3.6), arrowprops=ap)   # Agents ↓ Razorpay
 
     plt.tight_layout()
     out_path = os.path.join(DOCS_DIR, "architecture_diagram.png")
