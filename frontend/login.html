@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GrowthPilot — Login</title>
+    <meta name="description" content="Sign in to GrowthPilot — Autonomous AI Commerce Growth Agent">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:       #0f172a;
+            --panel:    #1e293b;
+            --border:   #334155;
+            --blue:     #38bdf8;
+            --green:    #34d399;
+            --purple:   #818cf8;
+            --amber:    #fbbf24;
+            --red:      #f87171;
+            --text:     #e2e8f0;
+            --muted:    #94a3b8;
+            --input-bg: #0f172a;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ── Animated grid background ─────────────────── */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(56, 189, 248, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.04) 1px, transparent 1px);
+            background-size: 48px 48px;
+            animation: gridPan 30s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes gridPan {
+            0%   { background-position: 0 0; }
+            100% { background-position: 48px 48px; }
+        }
+
+        /* Glow blobs */
+        .blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.12;
+            pointer-events: none;
+            z-index: 0;
+            animation: blobFloat 8s ease-in-out infinite alternate;
+        }
+        .blob-blue  { width: 500px; height: 500px; background: #38bdf8; top: -150px; left: -150px; }
+        .blob-green { width: 400px; height: 400px; background: #34d399; bottom: -100px; right: -100px; animation-delay: 3s; }
+        .blob-purp  { width: 300px; height: 300px; background: #818cf8; top: 40%; left: 60%; animation-delay: 1.5s; }
+        @keyframes blobFloat {
+            from { transform: translate(0, 0) scale(1); }
+            to   { transform: translate(30px, 20px) scale(1.08); }
+        }
+
+        /* ── Card ─────────────────────────────────────── */
+        .login-wrap {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            width: min(960px, 96vw);
+            min-height: 560px;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(56,189,248,0.12);
+        }
+
+        /* ── Left brand panel ─────────────────────────── */
+        .brand-panel {
+            width: 420px;
+            flex-shrink: 0;
+            background: linear-gradient(145deg, #0c1628 0%, #0f2440 50%, #0a1a30 100%);
+            padding: 48px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-right: 1px solid rgba(56,189,248,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .brand-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #38bdf8, #818cf8, #34d399);
+        }
+
+        .logo-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .logo-icon {
+            width: 48px; height: 48px;
+            background: linear-gradient(135deg, #0284c7, #38bdf8);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 8px 24px rgba(56,189,248,0.3);
+        }
+        .logo-text { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #fff; }
+        .logo-sub  { font-size: 11px; color: var(--muted); font-weight: 500; letter-spacing: 0.3px; margin-top: 1px; }
+
+        .brand-headline {
+            margin: auto 0;
+        }
+        .brand-headline h2 {
+            font-size: 28px;
+            font-weight: 800;
+            line-height: 1.25;
+            color: #fff;
+            margin-bottom: 14px;
+        }
+        .brand-headline h2 span { color: var(--blue); }
+        .brand-headline p {
+            font-size: 13.5px;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .feature-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 24px;
+        }
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12.5px;
+            color: var(--muted);
+        }
+        .feat-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .brand-footer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .pill {
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 10.5px;
+            font-weight: 600;
+            border: 1px solid;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ── Right form panel ─────────────────────────── */
+        .form-panel {
+            flex: 1;
+            background: var(--panel);
+            padding: 52px 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-header { margin-bottom: 32px; }
+        .form-header h1 { font-size: 26px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+        .form-header p  { font-size: 13.5px; color: var(--muted); }
+
+        /* Role badge */
+        .admin-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(251,191,36,0.1);
+            border: 1px solid rgba(251,191,36,0.3);
+            color: var(--amber);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 28px;
+        }
+        .admin-badge span.dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--amber);
+            animation: pulse 1.8s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%       { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        /* Quick-fill hint */
+        .hint-box {
+            background: rgba(56,189,248,0.06);
+            border: 1px solid rgba(56,189,248,0.18);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 24px;
+            font-size: 12px;
+            color: var(--blue);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .hint-box:hover { background: rgba(56,189,248,0.12); }
+        .hint-box svg   { flex-shrink: 0; margin-top: 1px; }
+        .hint-box code  { font-family: 'JetBrains Mono', monospace; color: var(--text); }
+
+        /* Form fields */
+        .field { margin-bottom: 18px; }
+        .field label {
+            display: block;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--muted);
+            margin-bottom: 7px;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+        .input-wrap { position: relative; }
+        .input-wrap .icon {
+            position: absolute;
+            left: 14px; top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: 15px;
+            pointer-events: none;
+        }
+        .field input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 13px 14px 13px 42px;
+            font-size: 14px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .field input::placeholder { color: #475569; }
+        .field input:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(56,189,248,0.12);
+        }
+        .field input.error-field { border-color: var(--red); }
+        .field input.error-field:focus { box-shadow: 0 0 0 3px rgba(248,113,113,0.12); }
+
+        /* Eye toggle */
+        .eye-toggle {
+            position: absolute;
+            right: 14px; top: 50%;
+            transform: translateY(-50%);
+            background: none; border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px;
+            transition: color 0.2s;
+        }
+        .eye-toggle:hover { color: var(--text); }
+
+        /* Error message */
+        .error-msg {
+            color: var(--red);
+            font-size: 12px;
+            margin-top: 6px;
+            display: none;
+            align-items: center;
+            gap: 5px;
+        }
+        .error-msg.show { display: flex; }
+
+        /* Submit button */
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #0284c7, #38bdf8);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            margin-top: 8px;
+            position: relative;
+            overflow: hidden;
+            transition: opacity 0.2s, transform 0.15s;
+            box-shadow: 0 4px 20px rgba(56,189,248,0.3);
+        }
+        .btn-login:hover  { opacity: 0.92; transform: translateY(-1px); }
+        .btn-login:active { transform: translateY(0); }
+        .btn-login:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-login .spinner {
+            display: inline-block;
+            width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Global error alert */
+        .alert-error {
+            background: rgba(248,113,113,0.1);
+            border: 1px solid rgba(248,113,113,0.3);
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 13px;
+            color: var(--red);
+            margin-bottom: 18px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        .alert-error.show { display: flex; }
+
+        /* Success overlay */
+        .success-overlay {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            text-align: center;
+        }
+        .success-overlay.show { display: flex; }
+        .success-icon {
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            background: rgba(52, 211, 153, 0.12);
+            border: 2px solid var(--green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes popIn {
+            from { transform: scale(0); opacity: 0; }
+            to   { transform: scale(1); opacity: 1; }
+        }
+        .success-overlay h3 { font-size: 22px; font-weight: 800; color: #fff; }
+        .success-overlay p  { font-size: 13px; color: var(--muted); }
+        .redirect-bar {
+            width: 200px;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .redirect-bar-fill {
+            height: 100%;
+            background: var(--green);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 2s linear;
+        }
+
+        /* Footer links */
+        .form-footer {
+            margin-top: 24px;
+            font-size: 12px;
+            color: var(--muted);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .form-footer a { color: var(--blue); text-decoration: none; }
+        .form-footer a:hover { text-decoration: underline; }
+
+        /* ── Responsive ───────────────────────────────── */
+        @media (max-width: 720px) {
+            .login-wrap  { flex-direction: column; min-height: unset; }
+            .brand-panel { width: 100%; padding: 36px 28px; }
+            .brand-headline h2 { font-size: 22px; }
+            .form-panel  { padding: 36px 28px; }
+            .blob { opacity: 0.07; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background decoration -->
+    <div class="bg-grid"></div>
+    <div class="blob blob-blue"></div>
+    <div class="blob blob-green"></div>
+    <div class="blob blob-purp"></div>
+
+    <div class="login-wrap" role="main">
+
+        <!-- ── Left Brand Panel ──────────────────────── -->
+        <div class="brand-panel" aria-hidden="true">
+            <div class="logo-row">
+                <div class="logo-icon">🧭</div>
+                <div>
+                    <div class="logo-text">GrowthPilot</div>
+                    <div class="logo-sub">Autonomous AI Commerce Agent</div>
+                </div>
+            </div>
+
+            <div class="brand-headline">
+                <h2>Your AI-powered<br><span>growth team</span><br>in one dashboard.</h2>
+                <p>
+                    Automatically detects revenue opportunities,
+                    calculates margin-safe discounts, and executes
+                    campaigns via Razorpay — all in a closed loop.
+                </p>
+                <ul class="feature-list">
+                    <li><div class="feat-dot" style="background:#38bdf8"></div> 5-Agent AI Reasoning Core</li>
+                    <li><div class="feat-dot" style="background:#34d399"></div> Supabase Postgres + Row Level Security</li>
+                    <li><div class="feat-dot" style="background:#f87171"></div> Redis Async Event Queue & Cache</li>
+                    <li><div class="feat-dot" style="background:#818cf8"></div> Razorpay Orders, PayLinks & Webhooks</li>
+                    <li><div class="feat-dot" style="background:#fbbf24"></div> Dynamic Guardrails — Math, not LLMs</li>
+                </ul>
+            </div>
+
+            <div class="brand-footer">
+                <span class="pill" style="color:#38bdf8;border-color:rgba(56,189,248,0.3)">FastAPI</span>
+                <span class="pill" style="color:#34d399;border-color:rgba(52,211,153,0.3)">Supabase</span>
+                <span class="pill" style="color:#f87171;border-color:rgba(248,113,113,0.3)">Redis</span>
+                <span class="pill" style="color:#818cf8;border-color:rgba(129,140,248,0.3)">Razorpay</span>
+                <span class="pill" style="color:#fbbf24;border-color:rgba(251,191,36,0.3)">Buildathon 2026</span>
+            </div>
+        </div>
+
+        <!-- ── Right Form Panel ──────────────────────── -->
+        <div class="form-panel">
+
+            <!-- Login form -->
+            <div id="login-form-section">
+                <div class="form-header">
+                    <h1>Welcome back</h1>
+                    <p>Sign in to your GrowthPilot account</p>
+                </div>
+
+                <div class="admin-badge">
+                    <span class="dot"></span>
+                    Admin Access Enabled
+                </div>
+
+                <!-- Quick fill hint -->
+                <div class="hint-box" id="hint-box" onclick="fillAdminCredentials()" title="Click to auto-fill admin credentials" role="button" tabindex="0" aria-label="Auto-fill admin credentials">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <div>
+                        <strong>Admin credentials:</strong>
+                        <code> admin@growthpilot.io</code> / <code>admin2026</code>
+                        &nbsp;·&nbsp; Click to auto-fill
+                    </div>
+                </div>
+
+                <!-- Global error alert -->
+                <div class="alert-error" id="alert-error" role="alert">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" flex-shrink="0">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span id="alert-error-text">Invalid credentials. Please try again.</span>
+                </div>
+
+                <form id="login-form" novalidate autocomplete="off">
+                    <!-- Email -->
+                    <div class="field">
+                        <label for="email">Email address</label>
+                        <div class="input-wrap">
+                            <span class="icon" aria-hidden="true">✉</span>
+                            <input id="email" type="email" name="email"
+                                   placeholder="admin@growthpilot.io"
+                                   autocomplete="username" spellcheck="false">
+                            <span class="error-msg" id="err-email">
+                                ⚠ Please enter a valid email address.
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="field">
+                        <label for="password">Password</label>
+                        <div class="input-wrap">
+                            <span class="icon" aria-hidden="true">🔒</span>
+                            <input id="password" type="password" name="password"
+                                   placeholder="••••••••"
+                                   autocomplete="current-password">
+                            <button type="button" class="eye-toggle" id="eye-toggle"
+                                    onclick="togglePasswordVisibility()"
+                                    aria-label="Toggle password visibility">
+                                👁
+                            </button>
+                        </div>
+                        <span class="error-msg" id="err-password">
+                            ⚠ Password is required.
+                        </span>
+                    </div>
+
+                    <button type="submit" class="btn-login" id="btn-login">
+                        Sign In to GrowthPilot
+                    </button>
+                </form>
+
+                <div class="form-footer">
+                    <span>Also available: <a href="#" onclick="fillTenantCredentials('alpha');return false">Tenant A</a> · <a href="#" onclick="fillTenantCredentials('beta');return false">Tenant B</a></span>
+                    <span>Phase 3 · Razorpay Buildathon 2026</span>
+                </div>
+            </div>
+
+            <!-- Success state -->
+            <div class="success-overlay" id="success-overlay" aria-live="polite">
+                <div class="success-icon">✓</div>
+                <h3 id="success-name">Welcome, Admin!</h3>
+                <p id="success-role">Authenticated as <strong>admin</strong> · Redirecting to dashboard…</p>
+                <div class="redirect-bar">
+                    <div class="redirect-bar-fill" id="redirect-bar-fill"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ── Store token in sessionStorage ──────────────
+        const TOKEN_KEY    = 'gp_auth_token';
+        const TENANT_KEY   = 'gp_tenant_id';
+        const TENANT_LABEL = 'gp_tenant_label';
+        const ROLE_KEY     = 'gp_role';
+
+        // Auto-redirect if already logged in
+        window.addEventListener('DOMContentLoaded', () => {
+            const existing = sessionStorage.getItem(TOKEN_KEY);
+            if (existing) redirectToDashboard(false);
+
+            // Allow keyboard-enter on hint box
+            document.getElementById('hint-box').addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') fillAdminCredentials();
+            });
+        });
+
+        // ── Credential helpers ─────────────────────────
+        function fillAdminCredentials() {
+            document.getElementById('email').value    = 'admin@growthpilot.io';
+            document.getElementById('password').value = 'admin2026';
+            clearErrors();
+        }
+
+        function fillTenantCredentials(tenant) {
+            const creds = {
+                alpha: { email: 'alpha@growthpilot.demo', pass: 'password123' },
+                beta:  { email: 'beta@growthpilot.demo',  pass: 'password123' }
+            };
+            document.getElementById('email').value    = creds[tenant].email;
+            document.getElementById('password').value = creds[tenant].pass;
+            clearErrors();
+        }
+
+        // ── Password visibility toggle ─────────────────
+        function togglePasswordVisibility() {
+            const inp = document.getElementById('password');
+            const btn = document.getElementById('eye-toggle');
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                btn.textContent = '🙈';
+                btn.setAttribute('aria-label', 'Hide password');
+            } else {
+                inp.type = 'password';
+                btn.textContent = '👁';
+                btn.setAttribute('aria-label', 'Show password');
+            }
+        }
+
+        // ── Validation ─────────────────────────────────
+        function clearErrors() {
+            document.getElementById('alert-error').classList.remove('show');
+            ['email', 'password'].forEach(f => {
+                document.getElementById(f).classList.remove('error-field');
+                document.getElementById(`err-${f}`).classList.remove('show');
+            });
+        }
+
+        function validate() {
+            let ok = true;
+            const email    = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                document.getElementById('email').classList.add('error-field');
+                document.getElementById('err-email').classList.add('show');
+                ok = false;
+            }
+            if (!password) {
+                document.getElementById('password').classList.add('error-field');
+                document.getElementById('err-password').classList.add('show');
+                ok = false;
+            }
+            return ok;
+        }
+
+        // ── Form submit ────────────────────────────────
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearErrors();
+            if (!validate()) return;
+
+            const btn   = document.getElementById('btn-login');
+            const email = document.getElementById('email').value.trim();
+            const pass  = document.getElementById('password').value;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Signing in…';
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password: pass })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || `HTTP ${res.status}: Authentication failed`);
+                }
+
+                const data = await res.json();
+                // Persist session
+                sessionStorage.setItem(TOKEN_KEY,    data.access_token);
+                sessionStorage.setItem(TENANT_KEY,   data.tenant_id);
+                sessionStorage.setItem(TENANT_LABEL, data.store_name || 'GrowthPilot');
+                sessionStorage.setItem(ROLE_KEY,     data.role || 'growth_manager');
+
+                showSuccess(data);
+
+            } catch (err) {
+                document.getElementById('alert-error-text').textContent =
+                    err.message.includes('401') || err.message.toLowerCase().includes('auth')
+                        ? 'Invalid email or password. Please try again.'
+                        : err.message;
+                document.getElementById('alert-error').classList.add('show');
+                btn.disabled = false;
+                btn.innerHTML = 'Sign In to GrowthPilot';
+            }
+        });
+
+        // ── Success transition ─────────────────────────
+        function showSuccess(data) {
+            const role      = data.role || 'growth_manager';
+            const roleLbl   = role === 'admin' ? 'Admin' : 'Growth Manager';
+            const storeName = data.store_name || 'GrowthPilot';
+
+            document.getElementById('login-form-section').style.display = 'none';
+            document.getElementById('success-overlay').classList.add('show');
+            document.getElementById('success-name').textContent =
+                `Welcome, ${roleLbl}!`;
+            document.getElementById('success-role').innerHTML =
+                `Authenticated as <strong>${role}</strong> · ${storeName} · Redirecting…`;
+
+            // Animate progress bar then redirect
+            requestAnimationFrame(() => {
+                document.getElementById('redirect-bar-fill').style.width = '100%';
+            });
+            setTimeout(() => redirectToDashboard(true), 2200);
+        }
+
+        function redirectToDashboard(withTenant) {
+            // Pass tenant hint in hash so index.html can pick it up
+            const tenant = sessionStorage.getItem(TENANT_KEY) || '';
+            const hint = tenant.includes('beta') ? '#tenant=beta' : '#tenant=alpha';
+            window.location.href = '/' + (withTenant ? hint : '');
+        }
+    </script>
+</body>
+</html>

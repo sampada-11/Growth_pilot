@@ -28,8 +28,16 @@ def verify_password(plain_password: str, password_hash: str) -> bool:
     return hmac.compare_digest(computed, password_hash)
 
 
-# Pre-registered Demo Tenants (§4 Second Demo Tenant)
+# Pre-registered Demo Tenants (§4 Second Demo Tenant) + Admin
 DEMO_USERS = {
+    "admin@growthpilot.io": {
+        "user_id": "usr_admin_000",
+        "email": "admin@growthpilot.io",
+        "password_hash": hash_password("admin2026"),
+        "tenant_id": "tenant_store_alpha",   # Admin defaults to Tenant A view
+        "store_name": "GrowthPilot Admin",
+        "role": "admin"
+    },
     "alpha@growthpilot.demo": {
         "user_id": "usr_alpha_001",
         "email": "alpha@growthpilot.demo",

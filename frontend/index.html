@@ -65,6 +65,9 @@
                     <button onclick="fetchAuditLog()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
                         <i class="fa-solid fa-shield-halved"></i> Audit
                     </button>
+                    <button onclick="logoutUser()" id="btn-logout" class="bg-rose-900/60 hover:bg-rose-800 text-rose-200 px-2.5 py-1.5 rounded-lg border border-rose-700/50 transition flex items-center gap-1 font-medium" title="Sign out">
+                        <i class="fa-solid fa-right-from-bracket"></i> Logout
+                    </button>
                 </div>
             </div>
         </div>
@@ -379,9 +382,50 @@
         let currentCampaignId = "";
         let currentFirstOppId = "";
 
+        // ── Auth Guard ──────────────────────────────────────────
+        // Redirect to /login if no session token found
+        const TOKEN_KEY    = 'gp_auth_token';
+        const TENANT_KEY   = 'gp_tenant_id';
+        const TENANT_LABEL = 'gp_tenant_label';
+        const ROLE_KEY     = 'gp_role';
+
+        (function guardAuth() {
+            const token = sessionStorage.getItem(TOKEN_KEY);
+            if (!token) {
+                window.location.replace('/login');
+            } else {
+                currentAuthToken = token;
+                currentTenantId  = sessionStorage.getItem(TENANT_KEY) || 'tenant_store_alpha';
+            }
+        })();
+
+        // Show admin badge in nav if role is admin
+        function applyRoleBadge() {
+            const role = sessionStorage.getItem(ROLE_KEY) || 'growth_manager';
+            const label = sessionStorage.getItem(TENANT_LABEL) || 'GrowthPilot';
+            if (role === 'admin') {
+                const badge = document.getElementById('active-tenant-badge');
+                if (badge) badge.innerHTML = `<span style="color:#fbbf24;font-weight:700">⭐ Admin</span> · ${label} · Supabase RLS Active`;
+            }
+        }
+
+        // Logout helper
+        function logoutUser() {
+            sessionStorage.clear();
+            window.location.replace('/login');
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
-            // Default demo login to Tenant A
-            switchTenant("alpha");
+            applyRoleBadge();
+            // Determine tenant from URL hash (#tenant=beta) or stored session
+            const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
+            const hashTenant = hashParams.get('tenant');
+            const storedTenant = sessionStorage.getItem(TENANT_KEY) || '';
+            const choice = hashTenant || (storedTenant.includes('beta') ? 'beta' : 'alpha');
+            // Clear hash from URL bar
+            history.replaceState(null, '', '/');
+            // Restore session token from storage (already set above)
+            switchTenant(choice);
         });
 
         async function switchTenant(choice) {

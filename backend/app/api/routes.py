@@ -84,8 +84,10 @@ def login(payload: LoginRequest):
         "token_type": "bearer",
         "tenant_id": user["tenant_id"],
         "store_name": user["store_name"],
-        "email": user["email"]
+        "email": user["email"],
+        "role": user["role"]
     }
+
 
 
 @router.post("/auth/demo-login")

@@ -4,10 +4,10 @@ Initializes Database, Supabase RLS, Redis Event Worker, and mounts APIs.
 """
 import os
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 
 from backend.app.db.models import init_db
 from backend.app.db.database import setup_supabase_rls
@@ -19,7 +19,7 @@ from backend.app.api.routes import router as api_router
 app = FastAPI(
     title="GrowthPilot - AI Commerce Growth Agent",
     description="Autonomous multi-agent system closing the loop between e-commerce analytics, Razorpay, Supabase, and Redis.",
-    version="2.0.0"
+    version="3.0.0"
 )
 
 # CORS middleware
@@ -34,7 +34,7 @@ app.add_middleware(
 # Include API router
 app.include_router(api_router)
 
-# Mount frontend directory if built static files exist
+# Mount frontend directory for static assets (CSS, JS, images etc.)
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "frontend")
 if os.path.exists(FRONTEND_DIR):
     app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
@@ -43,7 +43,7 @@ if os.path.exists(FRONTEND_DIR):
 @app.on_event("startup")
 def on_startup():
     """Initializes database, Supabase RLS, seeds data, starts Redis background worker, and runs initial pipeline."""
-    print("Initializing GrowthPilot Backend (Phase 2: Supabase + Redis + Razorpay)...")
+    print("Initializing GrowthPilot Backend (Phase 3: Auth Hardened + Login Page)...")
     init_db()
     setup_supabase_rls()
     seed_database(force=False)
@@ -52,16 +52,26 @@ def on_startup():
     print("GrowthPilot Backend startup complete. Pipeline & Redis worker ready.")
 
 
+@app.get("/login")
+def serve_login():
+    """Serves the GrowthPilot admin login page."""
+    html_path = os.path.join(FRONTEND_DIR, "login.html")
+    if os.path.exists(html_path):
+        return FileResponse(html_path)
+    return RedirectResponse(url="/")
+
+
 @app.get("/")
-def read_root():
-    """Serves main dashboard UI HTML or root API info."""
+def read_root(request: Request):
+    """Serves main dashboard UI. Dashboard JS validates sessionStorage auth token."""
     html_path = os.path.join(FRONTEND_DIR, "index.html")
     if os.path.exists(html_path):
         return FileResponse(html_path)
     return {
         "service": "GrowthPilot (AI Commerce Growth Agent)",
-        "phase": "Phase 2: Supabase Postgres + Redis + Razorpay",
+        "phase": "Phase 3: Auth Hardened + Login Page",
         "status": "online",
+        "login": "/login",
         "docs_url": "/docs",
         "api_overview": "/api/overview"
     }
