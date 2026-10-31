@@ -394,7 +394,7 @@ Growth_pilot/
 
 ---
 
-## 🏆 Key Differentiators for Hackathon Reviewers
+## 🏆 Key Differentiators 
 
 1. **Closed-Loop Commerce**: Goes beyond passive analytics by connecting telemetry diagnosis, mathematical opportunity scoring, guardrail verification, campaign execution, and statistical validation in a single platform.
 2. **Zero-Hallucination Pricing**: Disallows LLMs from deciding financial terms. All discounts, margin floors, and budget limits are calculated using deterministic mathematics.
