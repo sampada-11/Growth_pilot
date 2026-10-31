@@ -15,6 +15,14 @@ from backend.app.db.seed_synthetic_data import seed_database
 from backend.app.agents.orchestrator import run_full_pipeline
 from backend.app.integrations.redis_client import start_redis_worker
 from backend.app.api.routes import router as api_router
+from backend.app.api.analytics_routes import router as analytics_router
+from backend.app.api.agent_routes import router as agent_router
+from backend.app.api.opportunity_routes import router as opportunity_router
+from backend.app.api.campaign_routes import router as campaign_router
+from backend.app.api.experiment_routes import router as experiment_router
+from backend.app.api.copilot_routes import router as copilot_router
+from backend.app.api.customer_routes import router as customer_router
+from backend.app.api.product_routes import router as product_router
 
 app = FastAPI(
     title="GrowthPilot - AI Commerce Growth Agent",
@@ -31,8 +39,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include API router
+# Include API routers (Preserving /api routes + adding versioned /api/v1/* routes)
 app.include_router(api_router)
+app.include_router(analytics_router)
+app.include_router(agent_router)
+app.include_router(opportunity_router)
+app.include_router(campaign_router)
+app.include_router(experiment_router)
+app.include_router(copilot_router)
+app.include_router(customer_router)
+app.include_router(product_router)
 
 # Mount frontend directory for static assets (CSS, JS, images etc.)
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "frontend")

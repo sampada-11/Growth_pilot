@@ -187,6 +187,16 @@ def process_razorpay_webhook(
             UPDATE executions SET razorpay_payment_id = ?, status = 'paid'
             WHERE razorpay_order_id = ?
         """, (payment_entity.get("id"), order_id))
+
+        # Record into persistent payments table
+        pay_id = f"PAY-{int(time.time())}-{str(payment_entity.get('id', 'sim'))[-6:]}"
+        prov_event_id = event_payload.get("id") or f"evt_rzp_{int(time.time()*1000)}"
+        now_iso = datetime.now().isoformat()
+        cursor.execute("""
+            INSERT OR REPLACE INTO payments (
+                payment_id, tenant_id, order_id, provider_event_id, amount, currency, status, is_simulated, created_at
+            ) VALUES (?, ?, ?, ?, ?, 'INR', 'captured', 1, ?)
+        """, (pay_id, tenant_id, order_id, prov_event_id, amount, now_iso))
         conn.commit()
 
         log_audit(
@@ -233,6 +243,17 @@ def process_razorpay_webhook(
             SET confidence = MAX(0.2, confidence - 0.08)
             WHERE status = 'open' AND tenant_id = ?
         """, (tenant_id,))
+
+        # Record into persistent payments table
+        pay_id = f"PAY-FAIL-{int(time.time())}-{str(payment_id)[-6:]}"
+        prov_event_id = event_payload.get("id") or f"evt_rzp_fail_{int(time.time()*1000)}"
+        now_iso = datetime.now().isoformat()
+        amount_failed = float(payment_entity.get("amount", 110400)) / 100.0
+        cursor.execute("""
+            INSERT OR REPLACE INTO payments (
+                payment_id, tenant_id, order_id, provider_event_id, amount, currency, status, is_simulated, created_at
+            ) VALUES (?, ?, ?, ?, ?, 'INR', 'failed', 1, ?)
+        """, (pay_id, tenant_id, payment_id, prov_event_id, amount_failed, now_iso))
         conn.commit()
 
         log_audit(

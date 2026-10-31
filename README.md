@@ -1,255 +1,265 @@
 # 🚀 GrowthPilot — Autonomous AI Commerce Growth Agent System
 
-> *"Your business's AI growth team — it finds the opportunity, decides the play, and runs it."*
+> *"Your autonomous e-commerce growth team — finds the opportunity, decides the play, guides the execution, and measures the outcome."*
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![PostgreSQL](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E.svg?style=flat&logo=supabase&logoColor=white)](https://supabase.com/)
 [![Redis](https://img.shields.io/badge/Redis-Queue%20%26%20Cache-DC382D.svg?style=flat&logo=redis&logoColor=white)](https://redis.io/)
 [![Razorpay](https://img.shields.io/badge/Razorpay-Test--Mode%20Rails-0C2340.svg?style=flat&logo=razorpay&logoColor=white)](https://razorpay.com/)
-[![Tests](https://img.shields.io/badge/Tests-28%20Passed-brightgreen.svg?style=flat)](#-testing--validation)
+[![Tests](https://img.shields.io/badge/Tests-93%20Passed%20(100%25)-brightgreen.svg?style=flat)](#-testing--validation)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat)](LICENSE)
 
 ---
 
 ## 📖 Table of Contents
-- [Executive Summary](#-executive-summary)
+- [Executive Overview](#-executive-overview)
 - [The Problem: The Analytics-to-Action Gap](#-the-problem-the-analytics-to-action-gap)
 - [System Architecture](#-system-architecture)
-- [5-Agent Multi-Agent AI Core](#-5-agent-multi-agent-ai-core)
+- [SaaS Seller Growth Command Center (8 Modules)](#-saas-seller-growth-command-center-8-modules)
+  - [1. Executive Business Overview](#1-executive-business-overview)
+  - [2. Customer Intelligence & RFM Segmentation](#2-customer-intelligence--rfm-segmentation)
+  - [3. Product Analytics & Performance Matrix](#3-product-analytics--performance-matrix)
+  - [4. Explainable AI Growth Opportunities](#4-explainable-ai-growth-opportunities)
+  - [5. Guided 8-Step Campaign Builder & Performance Dashboard](#5-guided-8-step-campaign-builder--performance-dashboard)
+  - [6. A/B Testing & Continuous Learning Loop](#6-ab-testing--continuous-learning-loop)
+  - [7. Conversational AI Growth Copilot](#7-conversational-ai-growth-copilot)
+  - [8. System Audit & Testing Workbench](#8-system-audit--testing-workbench)
+- [Multi-Agent Core & Decision Engine](#-multi-agent-core--decision-engine)
 - [Mathematical Rigor & Zero Hallucination](#-mathematical-rigor--zero-hallucination)
-- [Multi-Tenant Architecture & Security](#-multi-tenant-architecture--security)
-- [Live Razorpay Rails & Event Loop](#-live-razorpay-rails--event-loop)
-- [Database Schema (12 Tables)](#-database-schema-12-relational-tables)
-- [Single-Page Interactive Dashboard](#-single-page-interactive-dashboard)
-- [Quickstart & Setup](#-quickstart--setup)
-- [Complete API Reference](#-complete-api-reference)
+- [Simulation Transparency & Channel Honesty](#-simulation-transparency--channel-honesty)
+- [Quickstart & 60-Second Setup](#-quickstart--60-second-setup)
+- [API Reference](#-complete-api-reference)
 - [Testing & Validation](#-testing--validation)
-- [Directory Structure](#-directory-structure)
+- [Project Directory Structure](#-directory-structure)
 
 ---
 
-## 🎯 Executive Summary
+## 🎯 Executive Overview
 
-**GrowthPilot** is an autonomous, multi-agent AI software system designed for e-commerce merchants and D2C brands. It closes the loop between **business intelligence and commercial action**. 
+**GrowthPilot** is an autonomous, multi-agent AI growth engineering system for e-commerce brands and D2C sellers. It bridges the critical divide between **passive analytics** and **commercial execution**.
 
-Unlike conventional dashboards that only display historical statistics, GrowthPilot:
-1. **Scans store telemetry** (customer sessions, cart additions, abandonment rates, order histories).
-2. **Detects high-value bottlenecks** using statistical churn propensity models.
-3. **Mathematically scores and ranks opportunities** using priority scoring (Impact × Confidence × Urgency).
-4. **Calculates margin-safe dynamic discount bands** to prevent margin cannibalization.
-5. **Classifies proposals by risk tier** and enforces human-in-the-loop approval.
-6. **Executes live Razorpay orders and payment links** upon approval.
-7. **Monitors webhooks asynchronously via Redis** and validates conversion lift via **two-proportion Z-tests**.
+Traditional dashboards dump charts on store owners without guidance. GrowthPilot closes the loop:
+1. **Telemetry Ingestion**: Scans live storefront event streams (pageviews, cart additions, drop-offs, checkouts).
+2. **Bottleneck Detection**: Diagnoses drop-offs and flags churn risks using statistical models.
+3. **Explainable Opportunity Scoring**: Prioritizes growth plays with a normalized 4-factor scoring model ($0.35I + 0.25C + 0.20F + 0.20E$).
+4. **Deterministic Guardrails**: Enforces margin floors, discount ceilings, and budget caps to protect profitability.
+5. **Guided Campaign Builder**: An 8-step wizard offering AI multi-variant copywriting, audience sizing, and channel previews.
+6. **Honest Multi-Mode Execution**: Transparent Demo Mode simulation (`[SIMULATED]`) alongside authenticated Live Mode rails.
+7. **Causal Measurement**: Runs two-proportion Z-tests and Welch's t-tests to prove causal revenue lift and feeds results back into future strategy weights.
+8. **Conversational Copilot**: Natural-language assistant that answers business questions using verified telemetry and authorized analytics.
 
 ---
 
 ## ⚡ The Problem: The Analytics-to-Action Gap
 
-Modern e-commerce platforms generate massive volumes of telemetry, but merchants face a critical operational dilemma:
-
 ```
-┌─────────────────────────────────┐
-│     Traditional Analytics       │  ❌ Passive & Descriptive
-│ "Cart abandonment is 71% for    │     Leaves merchant guessing what offer,
-│  Earbud Stands among VIPs"      │     what segment, and what price to set.
-└────────────────┬────────────────┘
-                 │
-        [ANALYTICS-TO-ACTION GAP]
-                 │
-┌────────────────▼────────────────┐
-│      GrowthPilot Solution       │  ✅ Prescriptive, Guardrailed & Executable
-│ Autonomous 5-agent pipeline     │     Calculates margin-safe 8% discount,
-│ that drafts, gates, and creates │     requests 1-click human approval, and
-│ live Razorpay checkout links.   │     creates instant payment links.
-└─────────────────────────────────┘
+┌──────────────────────────────────────┐
+│        Traditional Dashboards        │  ❌ Passive & Ambiguous
+│ "Cart abandonment reached 71% for    │     Leaves merchant guessing what offer,
+│  Earbud Stands in 18-25 cohort"      │     what copy, and what margin to risk.
+└──────────────────┬───────────────────┘
+                   │
+         [ANALYTICS-TO-ACTION GAP]
+                   │
+┌──────────────────▼───────────────────┐
+│         GrowthPilot Solution         │  ✅ Autonomous, Explainable & Gated
+│ Multi-agent intelligence scores play │     Pre-calculates 8% discount (42% margin),
+│ (Priority 89.2), generates 6 copy   │     validates GR-01/02/03/06 guardrails,
+│ variants, and tracks causal lift.    │     and guides execution with full audit trail.
+└──────────────────────────────────────┘
 ```
 
 ---
 
 ## 🏗️ System Architecture
 
-GrowthPilot is engineered around a **4-Tier Enterprise Architecture** combining asynchronous gateway processing, multi-tenant database isolation, an in-memory event bus, and deterministic agent orchestration.
+GrowthPilot is built on a 4-Tier Enterprise Architecture combining asynchronous processing, multi-tenant database isolation, in-memory event queues, and deterministic mathematical validation.
 
-![System Architecture](docs/architecture_diagram.png)
-
-### Architectural Tiers
-
-| Tier | Layer | Technologies | Responsibilities |
-|---|---|---|---|
-| **Tier 1** | **Client & Presentation** | HTML5, Tailwind CSS, Chart.js, Vanilla JS | Multi-view responsive merchant portal, session-based JWT storage, 1-click demo tenant context switching. |
-| **Tier 2** | **Gateway & Protection** | FastAPI, PyJWT, Sliding-Window Limiter | Strict server-side JWT verification (`get_current_tenant`), per-tenant rate limiting (15-30 req/min), sub-millisecond Redis caching (30–60s TTL). |
-| **Tier 3** | **Multi-Agent Core** | Python, NumPy, Pandas, Scipy Stats | 5-agent pipeline: Insight → Decision → Campaign & Pricing → Guardrail & Orchestrator → Experiment. |
-| **Tier 4** | **Persistence & Rails** | Supabase Postgres, SQLite WAL, Redis, Razorpay | Row Level Security (RLS) policies, Redis event queue (`growthpilot:events:queue`), background worker, Razorpay Orders & Payment Links. |
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        TIER 1: PRESENTATION                            │
+│  Seller Growth Command Center (Tailwind CSS, Chart.js, Vanilla JS)     │
+│  8 Views · INR Formatting · Loading Skeletons · Honest Demo/Live Mode  │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ HTTP / REST / JSON
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                    TIER 2: GATEWAY & GOVERNANCE                        │
+│  FastAPI · PyJWT Multi-Tenant Auth · Sliding-Window Rate Limiter       │
+│  Server-Side Tenant Extraction (No Client-Spoofing)                    │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                  TIER 3: MULTI-AGENT INTELLIGENCE                      │
+│  Insight Agent ──► Decision Agent ──► Strategy & Pricing Agent         │
+│  ▲                         │                                           │
+│  │ Causal Learning Loop    ▼                                           │
+│  Experiment Agent  ◄── Guardrail & Orchestration Agent                 │
+│  (Two-Prop Z-Test)     (Margin Floors, Discount Ceilings, Risk Tiers)  │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                    TIER 4: PERSISTENCE & ADAPTERS                      │
+│  SQLite WAL / PostgreSQL (Supabase RLS) · Redis Queue · Razorpay Rails │
+│  SimulatedAdapter (Demo Mode) · LiveAdapter (SendGrid / SMTP Rails)    │
+└────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## 🤖 5-Agent Multi-Agent AI Core
+## 🖥️ SaaS Seller Growth Command Center (8 Modules)
 
-GrowthPilot distributes complex commercial operations across 5 specialized autonomous agents:
+The merchant portal is structured into 8 purpose-built views designed for non-technical store owners:
+
+### 1. Executive Business Overview
+- **Core KPI Cards**: Total Revenue (₹), Total Orders, Average Order Value (AOV), Conversion Rate (%), Returning Customer Rate (%), and Revenue Growth vs previous period.
+- **Visual Analytics**: Interactive 30-day Revenue Trend line chart, Orders Trend bar chart, Category Revenue breakdown donut, Top-Selling Products table, and Recent Activity log.
+- **Date Presets**: `Today`, `Last 7 Days`, `Last 30 Days`, `Last 90 Days`, and `Custom Range`.
+
+### 2. Customer Intelligence & RFM Segmentation
+- **Segmentation Engine**: Categorizes buyers into `Champions`, `Loyal Customers`, `Potential Loyalists`, `New Customers`, `At Risk`, and `Lost Customers`.
+- **Behavioral Visualizations**: RFM segmentation distribution, churn risk breakdown, Customer Lifetime Value (CLV) cohorts, and spending trend curves.
+- **Customer Table**: Searchable, sortable, and filterable customer roster showing Segment, Total Spent (₹), Last Purchase Date, Churn Risk score, and Recommended Action.
+
+### 3. Product Analytics & Performance Matrix
+- **Comprehensive Financials**: Revenue by Product bar chart, 30-day Sales Velocity trends, and Gross Margin Analysis with cost/margin tiers.
+- **4-Quadrant BCG Matrix**: Classifies inventory into *Stars*, *Cash Cows*, *Question Marks*, and *Dogs*.
+- **Diagnosis Tables**: Top-Selling Products with velocity indicators and Underperforming Products with AI diagnosis.
+- **Conditional Inventory Alerts**: Stock warnings generated *only when inventory data exists*.
+- **Clickable Product Modals**: Drill down into engagement funnels, buyer demographics, and 30-day trajectories.
+
+### 4. Explainable AI Growth Opportunities
+- **Priority Scoring**: Ranks growth opportunities using the 4-factor formula:
+  $$\text{Priority} = 0.35I + 0.25C + 0.20F + 0.20E$$
+- **Opportunity Cards**: Includes Title, Problem Detected, Supporting Business Data, Target Segment, Expected Revenue Lift, Priority Score, Risk Level, and Estimated Campaign Cost.
+- **Opportunity Lifecycle Tracking**:
+  $$\text{Detected} \longrightarrow \text{Analysed} \longrightarrow \text{Approved} \longrightarrow \text{Executing} \longrightarrow \text{Completed} \longrightarrow \text{Evaluated}$$
+- **Direct Hand-off**: Every opportunity has a one-click **"Create Campaign in Studio"** button that transfers strategy parameters directly into the campaign builder.
+
+### 5. Guided 8-Step Campaign Builder & Performance Dashboard
+Converts campaign proposals into an 8-step guided wizard:
+- **Step 1: Select Growth Opportunity** — Auto-populates from ranked opportunities or custom strategies.
+- **Step 2: Select Target Audience** — Precision segment selection with live audience sizing counter (e.g. 850 customers).
+- **Step 3: Choose Campaign Channels** — Real-time readiness checks. **SMS is explicitly marked as `NOT OPERATIONAL / UNSUPPORTED`** (locked and disabled) because SMS gateway credentials are not configured, maintaining 100% channel honesty.
+- **Step 4: AI Content Generation** — Multi-variant copy generator creating 3 Email + 3 Push variants with deterministic character linter and dynamic merge tokens.
+- **Step 5: Configure Discount, Budget & Duration** — Dynamic discount slider (3–20%), margin ceiling indicators, per-user caps, total budget, and unit economics calculator.
+- **Step 6: Live Campaign Preview** — Desktop/mobile email client and smartphone push notification mockups with token resolution.
+- **Step 7: Risk, Guardrails & Approval Requirements** — Automated verification of GR-01 (Margin Floor $\ge 20\%$), GR-02 (Discount Ceiling $\le 16.2\%$), GR-03 (Budget Cap $\le$ ₹50,000), and GR-06 (Batch Audience $\le 5,000$) with role-gated sign-off.
+- **Step 8: Execute or Simulate Campaign** — Pre-flight checklist, Razorpay test mode verification, and execution trigger.
+- **Campaign Performance Dashboard**:
+  - **Messages Sent**: Total dispatches across active channels.
+  - **Delivery Rate (%)**: Messages successfully delivered.
+  - **Open Rate (%)**: Unique opens.
+  - **Click-Through Rate (%)**: Link clicks.
+  - **Conversion Rate (%)**: Orders placed.
+  - **Revenue Generated (₹)**: Attributed gross sales lift.
+  - **Campaign ROI (%)**: Net commercial return multiple.
+  - **Delivery & Conversion Funnel**: Sent $\to$ Delivered $\to$ Opened $\to$ Clicked $\to$ Converted visual drop-off.
+  - **Dispatch Telemetry Log**: Real-time sample delivery logs with delivery IDs, provider IDs, and simulation tags.
+
+### 6. A/B Testing & Continuous Learning Loop
+- **Statsig-Style Experiment Interface**:
+  - **Control Arm A**: Baseline strategy (No discount).
+  - **Treatment Arm B**: GrowthPilot strategy (8% personalized discount).
+- **Comprehensive Measurements**: Number of customers, Conversion Rate, Revenue per Customer, Average Order Value (AOV), Profit Margin, and Campaign Cost.
+- **Rigorous Causal Inference**:
+  - Two-proportion hypothesis Z-test and Welch's t-test.
+  - Evaluates sample size, statistical significance ($p < 0.05$), and confidence intervals before declaring a winner.
+- **Autonomous Feedback Loop**: Automatically updates decision weights and model confidence based on verified results.
+
+### 7. Conversational AI Growth Copilot
+- **Natural Language Interface**: Ask plain-English business questions:
+  - *"Why did my revenue decrease this month?"*
+  - *"Which product has the highest cart abandonment?"*
+  - *"Identify customers likely to churn."*
+  - *"What was the impact of my previous campaign?"*
+- **Architecture**:
+  - Intent Classification $\to$ Authorized Tenant Telemetry $\to$ Analytics Execution $\to$ LLM Synthesis with empirical figures $\to$ Suggested action chips.
+  - Strictly blocked from autonomously executing commercial changes without Guardrail Agent validation and human approval.
+
+### 8. System Audit & Testing Workbench
+- Dedicated testing area cleanly separated from seller-facing dashboards.
+- Inspects cryptographic SHA-256 audit logs and contains test controls for simulating Razorpay webhooks (`payment.captured`, `payment.failed`).
+
+---
+
+## 🤖 Multi-Agent Core & Decision Engine
+
+GrowthPilot operates 5 specialized autonomous agents working in sequence:
 
 ```mermaid
 flowchart LR
-    A[Telemetry Data] --> B[1. Insight Agent]
+    A[Store Telemetry] --> B[1. Insight Agent]
     B --> C[2. Decision Agent]
-    C --> D[3. Campaign & Pricing Agent]
+    C --> D[3. Strategy & Pricing Agent]
     D --> E[4. Guardrail & Orchestrator]
-    E -->|1-Click Approval| F[Razorpay Rails]
-    F -->|Webhook: payment.captured| G[5. Experiment Agent]
+    E -->|Approved Execution| F[Channel Adapters / Razorpay]
+    F -->|Telemetry & Webhooks| G[5. Experiment Agent]
     G -->|Statistical Lift Feedback| C
 ```
 
-### 1. Insight Agent (`insight_agent.py`)
-- Analyzes cart events, browsing sessions, and order items.
-- Identifies funnel anomalies (e.g., product pairing abandonment, high churn propensity > 0.70).
-- Emits structured `insights` with empirical evidence.
-
-### 2. Growth Decision Agent (`decision_agent.py`)
-- Transforms raw insights into quantifiable commercial `opportunities`.
-- Computes **Priority Score = Expected Revenue Impact × Confidence × Urgency Factor**.
-- Ranks plays mathematically and sets up hypothesis testing parameters.
-
-### 3. Campaign & Pricing Agent (`campaign_agent.py`)
-- Determines targeted customer segment and optimal product offering.
-- Formulates **Deterministic Dynamic Discount Bands** using base price, product gross margin, and stock velocity.
-- Auto-generates personalized marketing copy tailored to customer segments (e.g., churn recovery, VIP bundle).
-
-### 4. Guardrail & Orchestrator Agent (`orchestrator.py` & `guardrails.py`)
-- Classifies proposals into risk tiers:
-  - **Low Risk**: <= 5% discount, <= 500 audience → Auto-executable or 1-click approval.
-  - **Medium Risk**: <= 10% discount, <= 1,000 audience → Mandatory 1-click human gate.
-  - **High Risk**: > 10% discount or > 1,000 audience → Mandatory written justification required.
-  - **Blocked**: Exceeds dynamic margin ceiling → Rejected immediately.
-- Dispatches authenticated **Razorpay Test Orders** and **Payment Links**.
-
-### 5. Experiment Agent (`experiment_agent.py`)
-- Continuously observes post-campaign conversion data.
-- Runs a **two-proportion Z-test** against pre-campaign baseline conversion.
-- Updates future model confidence (+0.05 on validated success, -0.08 on payment failures).
+1. **Insight Agent**: Scans event streams, identifies funnel bottlenecks, and flags churn anomalies.
+2. **Decision Agent**: Converts anomalies into quantifiable opportunities and computes priority scores.
+3. **Strategy & Pricing Agent**: Formulates dynamic discount bands and generates linted multi-variant copy.
+4. **Guardrail Agent**: Validates commercial policies (GR-01, GR-02, GR-03, GR-06) and enforces role-based approvals.
+5. **Experiment Agent**: Performs statistical hypothesis tests on outcomes and updates decision weights.
 
 ---
 
 ## 📐 Mathematical Rigor & Zero Hallucination
 
-> **Architectural Principle:** LLMs draft creative copy, but **all financial, pricing, and risk decisions are governed by deterministic mathematics**. No LLM can hallucinate discounts or erode unit margins.
+> **Zero-Hallucination Guarantee**: LLMs generate creative copy, but **all financial calculations, pricing discounts, and risk approvals are governed by deterministic mathematics**.
 
-### 1. Churn Propensity Scoring
-$$\text{Recency Factor} = \min\left(1.0, \frac{\text{Days Since Last Order}}{120}\right)$$
-$$\text{Session Factor} = \min\left(1.0, \frac{\text{Days Since Last Session}}{90}\right)$$
-$$\text{Frequency Factor} = \min\left(1.0, \max\left(0, 1.0 - \frac{\text{Total Orders}}{10}\right)\right)$$
-$$\mathbf{\text{Churn Score} = 0.50 \times \text{Recency} + 0.30 \times \text{Session} + 0.20 \times \text{Frequency}}$$
-*(A customer with a score > 0.70 is flagged as High Churn Risk).*
+### 1. Opportunity Priority Scoring
+$$\text{Priority} = 0.35 \times I + 0.25 \times C + 0.20 \times F + 0.20 \times E$$
+- $I$ = Business Impact Score ($0 - 100$, normalized from projected revenue lift)
+- $C$ = Confidence Score ($0 - 100$, grounded in telemetry sample size)
+- $F$ = Feasibility Score ($0 - 100$, execution ease and channel availability)
+- $E$ = Urgency Score ($0 - 100$, drop-off recency and inventory velocity)
 
-### 2. Opportunity Priority Scoring
-$$\mathbf{\text{Priority Score} = \text{Expected Revenue Impact (₹)} \times \text{Confidence} \times \text{Urgency Factor}}$$
-*Example (Tenant A - Earbud Stand Recovery):*  
-$₹81,600 \times 0.78 \times 1.25 = \mathbf{79,560.00}$ (Ranked #1 Growth Play).
+### 2. Churn Propensity Scoring
+$$\text{Churn Risk} = 0.50 \times \text{Recency} + 0.30 \times \text{Session Inactivity} + 0.20 \times \text{Order Frequency}$$
+Customers with a score $> 0.70$ are flagged as high churn risk.
 
 ### 3. Deterministic Dynamic Discount Band
-$$\text{Base Max Discount} = \text{Product Margin \%} \times 0.25$$
-$$\text{Max Allowed Discount} = \min(25.0\%, \max(5.0\%, \text{Base Max} \times \text{Inventory Urgency}))$$
-$$\text{Min Incentive Discount} = \max(2.0\%, \min(5.0\%, \text{Product Margin \%} \times 0.08))$$
-*Example (Earbud Stand with 50% Margin & 1.3 Urgency Factor):*  
-Band = **[3.0%, 12.0%]**, Recommended = **8.0%** (₹1,104 offer price).
+$$\text{Margin Floor} = \text{Product Margin \%} - \text{Discount \%} \ge 20.0\%$$
+$$\text{Dynamic Discount Ceiling} = \min\left(25.0\%, \max\left(5.0\%, \text{Product Margin \%} \times 0.25 \times \text{Urgency}\right)\right)$$
+*Example (Earbud Stand with 50% margin & 1.3 urgency):* Ceiling is **16.2%**, Recommended Offer is **8.0%**, maintaining a **42.0%** post-discount margin.
 
 ### 4. Two-Proportion Hypothesis Z-Test
-$$p_{\text{pool}} = \frac{p_{\text{baseline}} + p_{\text{actual}}}{2}$$
-$$SE = \sqrt{p_{\text{pool}} (1 - p_{\text{pool}}) \left(\frac{2}{n}\right)}$$
-$$Z = \frac{p_{\text{actual}} - p_{\text{baseline}}}{SE}$$
-*Example:* Baseline $p = 6.0\%$, Post-Campaign $p = 12.5\%$, sample $n = 850$:  
-**$Z = 4.62 \implies p < 0.0001$** (Statistically proven revenue lift at >99.9% confidence).
+$$p_{\text{pool}} = \frac{x_A + x_B}{n_A + n_B}, \quad SE = \sqrt{p_{\text{pool}}(1 - p_{\text{pool}})\left(\frac{1}{n_A} + \frac{1}{n_B}\right)}, \quad Z = \frac{p_B - p_A}{SE}$$
+Validates whether conversion lift is statistically significant ($p < 0.05, |Z| > 1.96$) or due to random variance.
 
 ---
 
-## 🔒 Multi-Tenant Architecture & Security
+## 🛡️ Simulation Transparency & Channel Honesty
 
-GrowthPilot supports enterprise multi-tenancy with strict logical and physical data isolation.
+GrowthPilot communicates execution reality honestly:
 
-### Pre-Configured Demo Tenants
-1. **Tenant A: SoundWave Audio (`tenant_store_alpha`)**
-   - Premium consumer electronics & audio accessories (Earbud Pro, Charging Stands).
-   - High-margin catalog, checkout recovery opportunities.
-2. **Tenant B: PulseWear Smart Gear (`tenant_store_beta`)**
-   - Performance wearables & fitness trackers (FitPulse Pro, Recovery Bands).
-   - Volume-oriented catalog, VIP churn reactivation opportunities.
-
-### Security Guarantees
-- **No Client Spoofing:** `tenant_id` is never trusted from query parameters or request bodies. The FastAPI gateway extracts it strictly from the server-verified JWT claims via `get_current_tenant`.
-- **Cross-Tenant Data Isolation:** A tenant cannot read, approve, or execute campaigns belonging to another tenant (returns `404 Not Found` / `403 Forbidden`).
-- **Postgres Row Level Security (RLS):**
-  ```sql
-  ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
-  CREATE POLICY tenant_isolation_policy ON customers
-      USING (tenant_id = current_setting('app.current_tenant', true));
-  ```
-- **PCI-DSS Compliant Audit Trail:** Payloads logged in `audit_logs` are scrubbed of card numbers, CVVs, and API secrets. Every record is stored alongside a cryptographic **SHA-256 payload hash** for non-repudiation.
-- **Sliding-Window Rate Limiting:** Enforced independently per tenant using Redis keys (`rate_limit:{tenant_id}:{route}:{minute}`).
+1. **Demo Mode vs. Live Mode**:
+   - **Demo Mode**: Dispatches simulated multi-channel telemetry. Every delivery event, receipt, and analytics card is explicitly tagged <strong style="color:#d97706">[SIMULATED]</strong>.
+   - **Live Mode**: Dispatches real messages via configured provider credentials (`SENDGRID_API_KEY`, `SMTP_HOST`). If credentials are not configured, the system safely refuses execution with code `LIVE_ADAPTER_UNAVAILABLE`.
+2. **Channel Integrity**:
+   - Supported and configured channels (Email, WebPush) are marked **Operational**.
+   - Channels lacking credentials (e.g. **SMS**) are displayed as **`NOT OPERATIONAL / UNSUPPORTED`** and locked. GrowthPilot never falsely marks unconfigured channels as operational.
 
 ---
 
-## 💳 Live Razorpay Rails & Event Loop
-
-GrowthPilot integrates deeply with Razorpay test-mode rails to execute and monitor commerce plays end-to-end.
-
-![Razorpay Event Flow](docs/razorpay_event_flow.png)
-
-1. **Order & Payment Link Generation:** Upon campaign approval, the Orchestrator generates a test-mode Razorpay Order and short URL Payment Link (`rzp.io/i/plink_xxx`).
-2. **Cryptographic HMAC-SHA256 Webhook Verification:** Incoming webhooks from Razorpay are verified against the raw payload bytes using constant-time `hmac.compare_digest`.
-3. **Non-Blocking Asynchronous Redis Queue:** Webhooks return `200 OK` in < 5 ms, enqueuing the event into `growthpilot:events:queue`.
-4. **Background Event Worker:** An asynchronous background worker pops events from Redis, updates execution states, invalidates cached queries, and triggers re-analysis.
-5. **Payment Failure Intelligence:** When `payment.failed` is received, GrowthPilot applies an automated **-0.08 confidence penalty** to the opportunity, stopping money from being spent on failing campaign types.
-
----
-
-## 🗄️ Database Schema (12 Relational Tables)
-
-The storage layer supports **Supabase PostgreSQL** with automated Alembic migrations and a zero-configuration local **SQLite WAL** fallback.
-
-![Database ER Diagram](docs/er_diagram.png)
-
-| Table | Description |
-|---|---|
-| `customers` | Customer profiles, demographic segments, acquisition channels, tenant mapping. |
-| `products` | Product catalog, base prices, gross margin %, inventory counts, urgency factors. |
-| `order_items` | Granular purchase history, items, quantities, historical discounts, line-item revenue. |
-| `sessions` | Web browsing sessions, durations, acquisition channels. |
-| `cart_events` | Granular funnel actions: product views, cart additions, checkout drop-offs. |
-| `insights` | Telemetry anomalies detected by the Insight Agent. |
-| `opportunities` | Prioritized growth plays scored by Impact × Confidence × Urgency. |
-| `campaign_proposals` | Drafted growth campaigns, target segments, dynamic discount bands, marketing copy. |
-| `campaign_interactions` | Post-campaign customer engagements, opens, clicks, checkouts. |
-| `executions` | Realized executions linked to Razorpay Order IDs and Payment Link IDs. |
-| `experiment_results` | Two-proportion Z-test statistical results, hypothesis verdicts, AI reasoning. |
-| `audit_logs` | Immutable audit log with sanitized payloads and SHA-256 hashes. |
-
----
-
-## 🖥️ Single-Page Interactive Dashboard
-
-The dashboard (`frontend/index.html`) is a responsive single-page application built with clean semantic HTML, modern styling, and Chart.js:
-
-1. **Executive Overview:** Live GMV, revenue, average order value, cart abandonment rate, and 30-day revenue trends.
-2. **Opportunities Explorer:** Ranked opportunity table displaying expected revenue lift, priority score, and 1-click campaign generation.
-3. **Campaign Studio & Guardrails:** Visual discount band sliders, risk tier badges (Low / Med / High / Blocked), approval modals, and instant Razorpay payment link launcher.
-4. **Experiment Analytics:** Pre vs post campaign conversion bar charts, Z-scores, p-values, and statistical hypothesis verdicts.
-5. **Audit Trail Inspector:** Real-time log of agent actions, webhook deliveries, and SHA-256 payload verification hashes.
-6. **1-Click Tenant Switcher:** Switch between **SoundWave Audio (Tenant A)** and **PulseWear (Tenant B)** with instantaneous UI re-hydration.
-
----
-
-## 🚀 Quickstart & Setup
+## ⚡ Quickstart & 60-Second Setup
 
 ### Prerequisites
 - Python 3.10+
-- (Optional) Docker or local Redis & Supabase account. If omitted, GrowthPilot automatically falls back to **in-memory Fakeredis** and **SQLite WAL mode**.
+- (Optional) Docker or local Redis & Supabase. If omitted, GrowthPilot automatically runs offline with zero configuration using **SQLite WAL** and **in-memory Fakeredis**.
 
-### 1. Clone & Setup Environment
+### 1. Clone & Set Up Virtual Environment
 ```bash
-git clone https://github.com/[your-username]/Growth_pilot.git
+git clone https://github.com/your-username/Growth_pilot.git
 cd Growth_pilot
 
-# Create and activate virtual environment
+# Create virtual environment
 python -m venv venv
+
+# Activate virtual environment
 # Windows:
 .\venv\Scripts\activate
 # Linux/macOS:
@@ -259,84 +269,78 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment Variables
-Copy `.env.example` to `.env`:
+### 2. Configure Environment (Optional)
 ```bash
 cp .env.example .env
 ```
-Key variables in `.env`:
-```ini
-# Database: Supabase Postgres URL (or omit to use local SQLite)
-DATABASE_URL=postgresql://postgres.xxx:xxx@aws-0-region.pooler.supabase.com:6543/postgres?sslmode=require
-
-# Redis: Cloud or local Redis (or omit for automatic in-memory fallback)
-REDIS_URL=redis://localhost:6379/0
-
-# Razorpay: Test-Mode credentials
-RAZORPAY_KEY_ID=rzp_test_your_key_id
-RAZORPAY_KEY_SECRET=your_razorpay_key_secret
-RAZORPAY_WEBHOOK_SECRET=your_webhook_secret
-
-# Multi-Tenant default
-DEMO_TENANT_ID=tenant_store_alpha
-```
+Default configuration works out of the box with zero external dependencies.
 
 ### 3. One-Click Launcher
-Run the automated launcher:
 ```bash
 python run_growthpilot.py
 ```
-This script automatically:
-1. Seeds 6 months of realistic synthetic e-commerce telemetry for both demo tenants.
-2. Runs the multi-agent pipeline to generate fresh insights and ranked opportunities.
-3. Starts the FastAPI server and background Redis event consumer.
+This automatically:
+1. Seeds 6 months of multi-tenant e-commerce telemetry for both stores.
+2. Executes the multi-agent pipeline to generate fresh opportunities.
+3. Launches the FastAPI server at `http://127.0.0.1:8000`.
 
-- **Web Dashboard:** [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
-- **Interactive Swagger Docs:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+- **Web Dashboard**: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+- **Swagger API Docs**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+- **Demo Accounts**:
+  - Store Alpha: **SoundWave Audio** (`tenant_store_alpha`) — Consumer Electronics
+  - Store Beta: **PulseWear** (`tenant_store_beta`) — Smart Wearables
 
 ---
 
 ## 📡 Complete API Reference
 
-All REST endpoints require a verified Supabase JWT Bearer token, except for auth and webhook endpoints.
-
-| Method | Endpoint | Description | Rate Limit |
+| Domain | Method | Endpoint | Description |
 |---|---|---|---|
-| `POST` | `/api/auth/login` | Authenticate with email + password, returns JWT with `tenant_id` | — |
-| `POST` | `/api/auth/demo-login` | 1-Click login for Tenant Alpha (`SoundWave`) or Beta (`PulseWear`) | — |
-| `POST` | `/api/auth/signup` | Register new store tenant account | — |
-| `GET` | `/api/auth/me` | Current authenticated user profile & tenant context | — |
-| `GET` | `/api/overview` | Core business KPIs & charts (Redis cached 45s) | — |
-| `GET` | `/api/customers/segments` | RFM customer segmentation breakdown for tenant | — |
-| `GET` | `/api/customers/churn-risk` | High-churn-risk customer list (churn score > 0.70) | — |
-| `GET` | `/api/products/trends` | 30-day product velocity and inventory health | — |
-| `GET` | `/api/opportunities` | Ranked commercial opportunities (Redis cached 60s) | — |
-| `GET` | `/api/opportunities/{id}` | Detailed parameters for a single opportunity | — |
-| `POST` | `/api/opportunities/{id}/campaign` | Run Campaign Agent to draft proposal & dynamic discount band | — |
-| `GET` | `/api/campaigns/{id}` | Retrieve campaign proposal details & guardrail risk tier | — |
-| `POST` | `/api/campaigns/{id}/approve` | Human approval gate; generates Razorpay Order & Payment Link | 15 req/min |
-| `POST` | `/api/campaigns/{id}/execute` | Dispatch campaign to execution rails | 15 req/min |
-| `GET` | `/api/experiments/{id}` | Two-proportion Z-test statistical results & hypothesis verdict | — |
-| `GET` | `/api/audit-log` | Tamper-evident audit trail with SHA-256 payload hashes | — |
-| `POST` | `/api/pipeline/run` | Re-run full 5-agent multi-agent analysis for current tenant | — |
-| `POST` | `/api/webhooks/razorpay` | **Razorpay Webhook Listener** (HMAC-SHA256 verified, Redis queue) | 30 req/min |
-| `POST` | `/api/razorpay/simulate-webhook` | Developer testing helper to simulate signed Razorpay webhooks | — |
+| **Auth** | `POST` | `/api/auth/demo-login` | 1-Click login for Store Alpha or Beta |
+| **Auth** | `GET` | `/api/auth/me` | Authenticated tenant profile & role |
+| **Overview** | `GET` | `/api/overview` | Core KPIs, revenue trends, and category distribution |
+| **Customers** | `GET` | `/api/v1/customers` | Searchable, paginated customer intelligence roster |
+| **Customers** | `GET` | `/api/v1/customers/segments` | RFM segmentation distribution cohorts |
+| **Customers** | `GET` | `/api/v1/customers/churn-risk` | High churn risk customer predictions |
+| **Products** | `GET` | `/api/v1/products/analytics` | BCG performance matrix, margin analysis, trends |
+| **Products** | `GET` | `/api/v1/products/{id}` | Clickable product detail and engagement funnel |
+| **Opportunities**| `GET` | `/api/v1/opportunities` | Prioritized opportunities scored by 4-factor formula |
+| **Opportunities**| `GET` | `/api/v1/opportunities/analytics` | Opportunity categories and revenue comparisons |
+| **Campaigns** | `POST` | `/api/v1/campaigns` | Create campaign draft from opportunity or custom |
+| **Campaigns** | `GET` | `/api/v1/campaigns/channels/readiness` | Channel connectivity status (Email, Push, SMS) |
+| **Campaigns** | `POST` | `/api/v1/campaigns/{id}/generate-content`| Generate 3 Email + 3 Push linted copy variants |
+| **Campaigns** | `GET` | `/api/v1/campaigns/{id}/preview` | Resolve personalization tokens for sample customer |
+| **Campaigns** | `POST` | `/api/v1/campaigns/{id}/approve` | Guardrail validation & role-gated approval sign-off |
+| **Campaigns** | `POST` | `/api/v1/campaigns/{id}/execute` | Dispatch execution (Demo simulation vs. Live rails)|
+| **Campaigns** | `GET` | `/api/v1/campaigns/{id}/performance` | 7 core KPIs: sends, rates, revenue, and ROI |
+| **Experiments**| `GET` | `/api/v1/experiments` | List A/B tests with statistical significance |
+| **Experiments**| `POST` | `/api/v1/experiments/{id}/evaluate` | Execute two-proportion Z-test & Welch's t-test |
+| **Copilot** | `POST` | `/api/v1/copilot/chat` | Conversational query execution with guardrail gating |
+| **Audit** | `GET` | `/api/audit-log` | Tamper-evident log with SHA-256 payload hashes |
+| **Webhooks** | `POST` | `/api/webhooks/razorpay` | HMAC-SHA256 verified Razorpay event receiver |
 
 ---
 
 ## 🧪 Testing & Validation
 
-GrowthPilot includes a comprehensive automated test suite covering unit economics, agent orchestration, multi-tenancy, rate limiting, and payment flows.
+The test suite covers unit economics, agent orchestration, guardrail enforcement, multi-tenant isolation, and statistical significance:
 
 ```bash
 python -m pytest tests/ -v
 ```
 
-### Test Coverage Highlights (28 / 28 Passed ✅)
-- `tests/test_growthpilot.py`: RFM segmentation, churn propensity scoring, linear trend regression, priority formulas, risk tier classification, and agent orchestration.
-- `tests/test_phase2_postgres_redis.py`: Multi-tenant schema validation, SQLAlchemy sessions, dynamic discount band protection, Razorpay order/payment link creation, HMAC-SHA256 signature verification, `payment.failed` penalty degradation, Redis queueing, and Redis 45s caching.
-- `tests/test_phase3_multi_tenant_auth.py`: JWT verification, cross-tenant isolation enforcement (Tenant B blocked from Tenant A resources), second tenant independent dataset verification, and per-tenant rate limiter isolation.
-- `tests/test_razorpay.py`: Live and test-mode Razorpay SDK transactions and webhook ingestion.
+### Test Suite Status: **93 / 93 Passed (100% Pass Rate)** ✅
+
+- `tests/test_growthpilot.py`: Core scoring, RFM models, churn formulas, and pipeline flow.
+- `tests/test_module_a_analytics.py`: Executive KPIs, date filtering, and statutory metrics.
+- `tests/test_module_b_agents.py`: Multi-agent pipeline, deterministic guardrails, and role gating.
+- `tests/test_module_c_opportunities.py`: 4-factor opportunity scoring, opportunity analytics, and ranking.
+- `tests/test_module_d_campaigns.py`: 8-step builder, channel readiness, copy linter, approval gating, and ROI metrics.
+- `tests/test_module_e_experiments.py`: Two-proportion Z-tests, Welch's t-tests, sample size checks, and learning loop.
+- `tests/test_phase1_schema_audit.py`: SQLite WAL schema integrity, foreign keys, and indexes.
+- `tests/test_phase2_postgres_redis.py`: Dual-mode persistence, Redis queueing, and webhook caching.
+- `tests/test_phase3_multi_tenant_auth.py`: JWT claims verification, RLS policies, and cross-tenant isolation.
+- `tests/test_razorpay.py`: Razorpay test orders, payment link creation, and webhook verification.
 
 ---
 
@@ -346,60 +350,54 @@ python -m pytest tests/ -v
 Growth_pilot/
 ├── backend/
 │   └── app/
-│       ├── agents/                  # 5-Agent Multi-Agent Core
-│       │   ├── insight_agent.py     # Funnel anomaly & churn detection
-│       │   ├── decision_agent.py    # Opportunity scoring & prioritization
-│       │   ├── campaign_agent.py    # Dynamic pricing & copy generation
-│       │   ├── orchestrator.py      # State machine coordinator & Razorpay dispatch
+│       ├── agents/                  # Autonomous Multi-Agent Core
+│       │   ├── insight_agent.py     # Anomaly and churn detection
+│       │   ├── decision_agent.py    # Opportunity scoring and ranking
+│       │   ├── strategy_agent.py    # Opportunity seeding and prioritization
+│       │   ├── campaign_agent.py    # Pricing and multi-variant copy generator
+│       │   ├── guardrail_agent.py   # Margin floor & ceiling policy enforcement
+│       │   ├── orchestrator.py      # Pipeline coordinator & Razorpay dispatch
 │       │   └── experiment_agent.py  # Two-proportion Z-test statistical evaluator
-│       ├── api/
-│       │   └── routes.py            # 18 REST endpoints (Auth, Analytics, Webhooks)
-│       ├── auth/
-│       │   ├── jwt_auth.py          # PyJWT token engine & password verification
-│       │   └── dependencies.py      # Server-side get_current_tenant extractor
-│       ├── db/
-│       │   ├── models.py            # SQLite/Postgres schema & sanitized audit log
+│       ├── analytics/               # Analytics Computation Engines
+│       │   ├── product_analytics.py # BCG matrix, margins, sales velocity
+│       │   ├── customer_analytics.py# RFM segmentation, churn propensity
+│       │   └── overview_analytics.py# Executive KPIs, trends, date filtering
+│       ├── api/                     # REST API Routing (v1 modular routers)
+│       │   ├── routes.py            # Overview, legacy routes, webhook endpoints
+│       │   ├── opportunity_routes.py# Opportunity feed and analytics
+│       │   ├── campaign_routes.py   # 8-step campaign builder and execution
+│       │   ├── customer_routes.py   # Customer intelligence and RFM endpoints
+│       │   ├── product_routes.py    # Product intelligence and BCG matrix
+│       │   ├── experiment_routes.py # A/B testing and statistical evaluation
+│       │   └── copilot_routes.py    # Natural-language copilot and intent engine
+│       ├── auth/                    # Multi-Tenant Authentication
+│       │   ├── jwt_auth.py          # PyJWT token generator and validator
+│       │   └── dependencies.py      # Server-side tenant and user extractor
+│       ├── campaigns/               # Delivery Adapters & Channel Integrations
+│       │   ├── service.py           # Campaign lifecycle and performance engine
+│       │   ├── adapters.py          # SimulatedAdapter vs. LiveAdapter (SendGrid/SMTP)
+│       │   └── schemas.py           # Pydantic validation schemas
+│       ├── db/                      # Persistence Layer
+│       │   ├── models.py            # SQLite/Postgres schema (12 relational tables)
 │       │   ├── database.py          # SQLAlchemy dual engine & Supabase RLS
 │       │   └── seed_synthetic_data.py # 6-month synthetic multi-tenant dataset
-│       ├── integrations/
-│       │   ├── redis_client.py      # Redis queue, worker loop & query cache
-│       │   └── rate_limiter.py      # Sliding-window per-tenant rate limiter
-│       ├── tools/
-│       │   ├── razorpay.py          # Razorpay Orders, Links, Webhooks & Penalties
-│       │   ├── guardrails.py        # Margin-safe dynamic discount bands
-│       │   ├── scoring.py           # Priority scoring formulas
-│       │   ├── churn.py             # Vectorized churn propensity model
-│       │   ├── segmentation.py      # Vectorized RFM customer segmentation
-│       │   └── trend.py             # Product inventory & velocity analytics
-│       └── main.py                  # FastAPI application entrypoint
-├── docs/                            # Architectural diagrams & PDF documentation
-│   ├── architecture_diagram.png
-│   ├── er_diagram.png
-│   ├── razorpay_event_flow.png
-│   ├── generate_diagrams.py
-│   └── generate_viva_pdf.py
-├── frontend/                        # Responsive Single-Page Application
-│   ├── index.html                   # Multi-view dashboard & Chart.js visualizer
-│   └── login.html                   # Auth & 1-click store switcher
-├── tests/                           # Complete test suite (28 test cases)
-│   ├── conftest.py                  # Pytest bootstrap with offline fallbacks
-│   ├── test_growthpilot.py
-│   ├── test_phase2_postgres_redis.py
-│   ├── test_phase3_multi_tenant_auth.py
-│   └── test_razorpay.py
-├── data/                            # Local database storage (growthpilot.db)
+│       └── main.py                  # FastAPI server entrypoint
+├── frontend/                        # Seller Growth Command Center UI
+│   ├── index.html                   # Single-Page Application (8 views, Chart.js)
+│   └── login.html                   # Multi-tenant 1-click store selector
+├── tests/                           # Automated Test Suite (93 tests, 100% passing)
 ├── run_growthpilot.py               # 1-Click CLI launcher
 ├── requirements.txt                 # Python dependencies
 ├── .env.example                     # Environment template
-└── README.md                        # Master documentation
+└── README.md                        # Project documentation
 ```
 
 ---
 
-## 🏆 Key Innovations & Architectural Highlights
+## 🏆 Key Differentiators for Hackathon Reviewers
 
-1. **Closed-Loop Commerce:** From finding an abandoned cart to issuing a Razorpay checkout link and tracking statistical conversion, without human context switching.
-2. **Deterministic Financial Guardrails:** Mathematical dynamic discount ceiling eliminates AI hallucination and protects merchant unit economics.
-3. **Resilient Dual-Mode Engineering:** Production-ready with Supabase Postgres and Redis, yet runs 100% offline with zero cloud configuration via SQLite WAL and Fakeredis.
-4. **Autonomous Degradation on Payment Failure:** Automated -0.08 confidence penalty prevents the system from blindly repeating campaigns that fail at checkout.
-5. **PCI-DSS Compliant Tamper-Evident Trail:** Immutable audit logs with sensitive fields redacted and SHA-256 hashes verifying system integrity.
+1. **Closed-Loop Commerce**: Goes beyond passive analytics by connecting telemetry diagnosis, mathematical opportunity scoring, guardrail verification, campaign execution, and statistical validation in a single platform.
+2. **Zero-Hallucination Pricing**: Disallows LLMs from deciding financial terms. All discounts, margin floors, and budget limits are calculated using deterministic mathematics.
+3. **Honest Engineering**: Clearly distinguishes Demo Mode (`[SIMULATED]`) from authentic Live Mode rails, and locks unsupported integrations (such as SMS) to prevent false claims.
+4. **Causal Statistical Rigor**: Validates campaign lift using two-proportion Z-tests and Welch's t-tests, updating future strategy confidence based on empirical results.
+5. **Production Multi-Tenancy**: Built with server-verified JWT claims, Row Level Security, sliding-window rate limiting, and tamper-evident SHA-256 audit logs.

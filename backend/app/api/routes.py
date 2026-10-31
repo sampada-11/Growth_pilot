@@ -13,6 +13,7 @@ from backend.app.auth.dependencies import get_current_user, get_current_tenant
 from backend.app.tools.segmentation import compute_customer_segmentation
 from backend.app.tools.churn import compute_churn_risk_list
 from backend.app.tools.trend import compute_product_trends
+from backend.app.analytics.engine import compute_overview_kpis
 from backend.app.tools.razorpay import (
     create_razorpay_order,
     create_razorpay_payment_link,
@@ -145,30 +146,25 @@ def get_current_user_profile(current_user: Dict[str, Any] = Depends(get_current_
 # -------------------------------------------------------------
 
 @router.get("/overview")
-def get_executive_overview(tenant_id: str = Depends(get_current_tenant)):
-    """Executive Overview: Cached per-tenant in Redis."""
-    cache_key = f"overview:{tenant_id}"
-    cached = get_cached_json(cache_key)
-    if cached:
-        cached["_cached"] = True
-        return cached
+def get_executive_overview(
+    from_date: Optional[str] = Query(None, alias="from"),
+    to_date: Optional[str] = Query(None, alias="to"),
+    segment_id: Optional[str] = Query(None),
+    product_id: Optional[str] = Query(None),
+    tenant_id: str = Depends(get_current_tenant)
+):
+    """Executive Overview: Pure backend calculation with date, segment, and product filtering (§B, §C, §D)."""
+    kpis = compute_overview_kpis(
+        tenant_id=tenant_id,
+        from_date=from_date,
+        to_date=to_date,
+        segment_id=segment_id,
+        product_id=product_id,
+        compare_previous=True
+    )
 
     conn = get_db_connection()
     cursor = conn.cursor()
-
-    cursor.execute("SELECT COALESCE(SUM(revenue), 0), COUNT(order_item_id) FROM order_items WHERE tenant_id = ?", (tenant_id,))
-    row = cursor.fetchone()
-    total_revenue = float(row[0])
-    total_orders = int(row[1])
-
-    cursor.execute("SELECT COUNT(*) FROM customers WHERE tenant_id = ?", (tenant_id,))
-    total_customers = cursor.fetchone()[0]
-
-    cursor.execute("SELECT COUNT(*) FROM sessions WHERE tenant_id = ?", (tenant_id,))
-    total_sessions = cursor.fetchone()[0]
-
-    conversion_rate = round((total_orders / (total_sessions + 1e-5)) * 100, 2)
-
     cursor.execute("SELECT * FROM opportunities WHERE tenant_id = ? ORDER BY priority_rank ASC LIMIT 3", (tenant_id,))
     opp_rows = cursor.fetchall()
     top_opportunities = [dict(r) for r in opp_rows]
@@ -179,22 +175,30 @@ def get_executive_overview(tenant_id: str = Depends(get_current_tenant)):
     else:
         ai_rec = "PulseWear Focus: 65% Inactivity Churn on Pulse Smartwatch. 12% VIP win-back bundle offers ₹42,000 revenue lift."
 
+    m = kpis["metrics"]
     result = {
         "tenant_id": tenant_id,
         "headline_metrics": {
-            "total_revenue": total_revenue,
-            "total_orders": total_orders,
-            "total_customers": total_customers,
-            "total_sessions": total_sessions,
-            "conversion_rate_pct": conversion_rate,
-            "active_alerts_count": len(top_opportunities)
+            "total_revenue": m["revenue"]["value"],
+            "total_orders": m["orders"]["value"],
+            "total_sessions": m["sessions"]["value"],
+            "conversion_rate_pct": m["conversion_rate"]["value"] if m["conversion_rate"]["value"] is not None else 0.0,
+            "aov": m["aov"]["value"] if m["aov"]["value"] is not None else 0.0,
+            "cart_abandonment_rate_pct": m["cart_abandonment_rate"]["value"] if m["cart_abandonment_rate"]["value"] is not None else 0.0,
+            "retention_rate_pct": m["retention_rate"]["value"] if m["retention_rate"]["value"] is not None else 0.0,
+            "revenue_growth_pct": m["revenue_growth"]["value"],
+            "active_alerts_count": len(top_opportunities),
+            "refunded_amount": m["non_revenue_adjustments"]["refunded_amount"],
+            "refunded_orders": m["non_revenue_adjustments"]["refunded_orders"],
+            "cancelled_amount": m["non_revenue_adjustments"]["cancelled_amount"],
+            "failed_payments_count": m["non_revenue_adjustments"]["failed_payments_count"]
         },
+        "metrics": m,
+        "range": kpis["range"],
         "top_opportunities": top_opportunities,
         "ai_weekly_recommendation": ai_rec,
         "_cached": False
     }
-
-    set_cached_json(cache_key, result, ttl_seconds=45)
     return result
 
 
@@ -227,13 +231,8 @@ def get_opportunities(tenant_id: str = Depends(get_current_tenant)):
     if cached:
         return cached
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM opportunities WHERE tenant_id = ? ORDER BY priority_rank ASC", (tenant_id,))
-    rows = cursor.fetchall()
-    conn.close()
-    
-    result = [dict(r) for r in rows]
+    from backend.app.opportunities.service import OpportunityService
+    result = OpportunityService.list_opportunities(tenant_id=tenant_id)
     set_cached_json(cache_key, result, ttl_seconds=45)
     return result
 
@@ -478,3 +477,23 @@ def api_simulate_webhook(payload: SimulateWebhookRequest, tenant_id: str = Depen
     result["enqueued_in_redis"] = True
 
     return result
+
+
+@router.get("/payments")
+@router.get("/v1/payments")
+def list_payments(tenant_id: str = Depends(get_current_tenant)):
+    """Lists recent persistent payment and webhook events for current tenant."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT payment_id, tenant_id, order_id, provider_event_id, amount, currency, status, is_simulated, created_at
+            FROM payments
+            WHERE tenant_id = ?
+            ORDER BY created_at DESC
+            LIMIT 50
+        """, (tenant_id,))
+        rows = cursor.fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()

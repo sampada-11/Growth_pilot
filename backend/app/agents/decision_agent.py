@@ -91,17 +91,30 @@ def run_decision_agent(insights: List[Dict[str, Any]], tenant_id: str = "tenant_
     for rank, opp in enumerate(ranked_opps, start=1):
         opp["priority_rank"] = rank
 
+        opp["est_revenue_impact"] = opp["expected_impact"]
+        opp["est_profit_impact"] = round(opp["expected_impact"] * 0.50 - 11424.0, 2)
+        opp["title"] = opp.get("problem", "").split(".")[0]
+        opp["description"] = opp.get("problem", "")
+        opp["lifecycle_state"] = "analysed"
+        opp["approval_status"] = "pending"
+        opp["execution_status"] = "not_started"
+        opp["risk_level"] = "medium"
+
     conn = get_db_connection()
     cursor = conn.cursor()
     for opp in ranked_opps:
         cursor.execute("""
             INSERT OR REPLACE INTO opportunities 
-            (opportunity_id, tenant_id, insight_id, problem, expected_impact, confidence, urgency_factor, recommended_action, priority_score, priority_rank, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (opportunity_id, tenant_id, insight_id, title, description, problem, expected_impact, est_revenue_impact, est_profit_impact, confidence, urgency_factor, recommended_action, priority_score, priority_rank, status, lifecycle_state, approval_status, execution_status, risk_level, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
         """, (
-            opp["opportunity_id"], opp["tenant_id"], opp["insight_id"], opp["problem"], 
-            opp["expected_impact"], opp["confidence"], opp["urgency_factor"], 
-            opp["recommended_action"], opp["priority_score"], opp["priority_rank"], opp["status"]
+            opp["opportunity_id"], opp["tenant_id"], opp["insight_id"],
+            opp["title"], opp["description"], opp["problem"], 
+            opp["expected_impact"], opp["est_revenue_impact"], opp["est_profit_impact"],
+            opp["confidence"], opp["urgency_factor"], 
+            opp["recommended_action"], opp["priority_score"], opp["priority_rank"],
+            opp["status"], opp["lifecycle_state"], opp["approval_status"],
+            opp["execution_status"], opp["risk_level"]
         ))
     conn.commit()
     conn.close()

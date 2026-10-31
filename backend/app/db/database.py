@@ -67,7 +67,11 @@ def setup_supabase_rls(db_engine=engine):
     tables = [
         "customers", "products", "order_items", "sessions", "cart_events",
         "insights", "opportunities", "campaign_proposals", "campaign_interactions",
-        "executions", "experiment_results", "audit_logs"
+        "executions", "experiment_results", "audit_logs",
+        "payments", "segments", "agent_runs", "agent_steps", "campaigns",
+        "campaign_content", "campaign_deliveries", "experiments",
+        "experiment_assignments", "learning_signals", "copilot_messages",
+        "opportunity_events"
     ]
 
     with db_engine.connect() as conn:
